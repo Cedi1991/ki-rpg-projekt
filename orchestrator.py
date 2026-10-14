@@ -9,7 +9,7 @@ from google.genai import types
 # --- KONFIGURATION FÜR GITHUB ACTIONS ---
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
-MODEL_ID = "gemini-1.5-flash"
+MODEL_ID = "gemini-2.5-flash"
 MAX_ITERATIONS = 1                 
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
