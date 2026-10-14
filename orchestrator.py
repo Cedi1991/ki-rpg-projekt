@@ -1,22 +1,25 @@
 import os
 import subprocess
 import time
+import json
 from pathlib import Path
 from pydantic import BaseModel, Field
-from google import genai
-from google.genai import types
+from openai import OpenAI
 
 # --- KONFIGURATION FÜR GITHUB ACTIONS ---
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
-MODEL_ID = "gemini-3.8-flash"
+MODEL_ID = "llama-3.3-70b-versatile" # Komplett kostenlos über Groq und extrem schnell
 
 MAX_ITERATIONS = 1                 
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
-RETRY_DELAY_SECONDS = 45           # 45 Sekunden Pause, um Server-Lastspitzen abzufedern
 
-client = genai.Client()
+# Verbindung zur kostenlosen Groq-API über den OpenAI-kompatiblen Client
+client = OpenAI(
+    api_key=os.environ.get("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1"
+)
 
 class FileChange(BaseModel):
     relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/economy.py'")
@@ -48,7 +51,7 @@ def rollback_workspace():
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Groq Free Tier)")
     print(f"📌 Genutztes Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -97,7 +100,16 @@ ARCHITEKTUR-VORGABEN:
 3. Du musst zu jedem neuen Modul direkt passende Unit-Tests unter tests/test_*.py schreiben!
 4. Bestehende Klassen in src/core.py dürfen um neue Attribute/Methoden erweitert werden, solange alle alten Tests in tests/test_core.py grün bleiben.
 
-Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte Schema.
+Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
+{{
+  "explanation": "Kurze Erklärung",
+  - "files": [
+    {{
+      "relative_path": "pfad/zur/datei.py",
+      "content": "vollständiger python code..."
+    }}
+  ]
+}}
 """
 
     success = False
@@ -108,21 +120,21 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
         
         try:
             if attempt > 1:
-                print(f"⏳ Warte {RETRY_DELAY_SECONDS} Sekunden, damit sich die Google-Server erholen können...")
-                time.sleep(RETRY_DELAY_SECONDS)
+                print("⏳ Warte 5 Sekunden...")
+                time.sleep(5)
 
-            response = client.models.generate_content(
+            response = client.chat.completions.create(
                 model=MODEL_ID,
-                contents=prompt + (f"\n\nLETZTER FEHLER BEIM TESTEN:\n{last_error}" if last_error else ""),
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=FeatureImplementation,
-                    temperature=0.2,
-                ),
+                messages=[
+                    {"role": "system", "content": "Du bist ein präziser Programmier-Assistent und antwortest strikt in validem JSON."},
+                    {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER BEIM TESTEN:\n{last_error}" if last_error else "")}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2,
             )
             
-            import json
-            data = json.loads(response.text)
+            raw_text = response.choices[0].message.content
+            data = json.loads(raw_text)
             
             for f_change in data.get("files", []):
                 rel_p = f_change["relative_path"]
@@ -146,7 +158,7 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
                 rollback_workspace()
 
         except Exception as e:
-            print(f"⚠️ Server/API-Fehler (Versuch {attempt}): {str(e)}")
+            print(f"⚠️ API-Fehler (Versuch {attempt}): {str(e)}")
             last_error = str(e)
             rollback_workspace()
 
