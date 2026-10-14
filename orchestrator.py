@@ -9,13 +9,42 @@ from google.genai import types
 # --- KONFIGURATION FÜR GITHUB ACTIONS ---
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
-MODEL_ID = "gemini-2.5-flash"
 MAX_ITERATIONS = 1                 
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
 SLEEP_BETWEEN_LOOPS = 0            
 
 client = genai.Client()
+
+def resolve_model_id() -> str:
+    """Fragt automatisch bei der API ab, welches Flash-Modell verfügbar ist."""
+    preferred_candidates = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-3.0-flash", "gemini-1.5-flash"]
+    try:
+        print("🔍 Frage verfügbare Modelle von der API ab...")
+        available_models = [m.name for m in client.models.list()]
+        
+        # Versuche zuerst einen unserer Favoriten zu finden
+        for candidate in preferred_candidates:
+            for model_name in available_models:
+                if candidate in model_name:
+                    clean_name = model_name.replace("models/", "")
+                    print(f"✅ Automatisch gewähltes Modell: {clean_name}")
+                    return clean_name
+                    
+        # Falls kein Favorit dabei ist, nimm das erste verfügbare Flash-Modell
+        for model_name in available_models:
+            if "flash" in model_name.lower():
+                clean_name = model_name.replace("models/", "")
+                print(f"✅ Fallback-Flash-Modell gewählt: {clean_name}")
+                return clean_name
+                
+    except Exception as e:
+        print(f"⚠️ Konnte Modelle nicht automatisch auflisten ({e}), nutze Standard-Fallback.")
+        
+    return "gemini-2.0-flash"
+
+# Dynamische Modell-Ermittlung beim Start
+MODEL_ID = resolve_model_id()
 
 class FileChange(BaseModel):
     relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/economy.py'")
