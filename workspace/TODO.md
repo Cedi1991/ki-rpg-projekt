@@ -14,6 +14,10 @@
 - [x] **Mehrspieler‑Modus (`src/multiplayer.py`)**: Netzwerk‑Synchronisation, Server‑Client‑Architektur und Spieler‑Interaktion.
 - [x] **Quests & Storyline (`src/quests.py`)**: Quest‑Logik, Belohnungen und Fortschritts‑Tracking.
 - [x] **Grafische Benutzeroberfläche (`src/gui.py`)**: Grundlegendes UI mit `tkinter` für Inventar‑Anzeige und Interaktionen.
+- [x] **Implementierung eines einfachen Dialogsystems (`src/dialogue.py`)**
+- [ ] Implementierung eines einfachen Dialogsystems (`src/dialogue.py`).
+- [ ] Erweiterung des Mehrspieler‑Modus um Lobby‑ und Chat‑Funktionen.
+- [ ] Persistenz für Quest‑Fortschritt in `src/persistence.py`.
 
 ## Weitere Ideen (optional)
 - [ ] Implementierung eines einfachen Dialogsystems (`src/dialogue.py`).
