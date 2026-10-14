@@ -6,7 +6,6 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from openai import OpenAI
 
-# --- KONFIGURATION FÜR GITHUB ACTIONS ---
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
 
@@ -14,37 +13,34 @@ MAX_ITERATIONS = 1
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
 
-# Verbindung zur kostenlosen Groq-API
 client = OpenAI(
     api_key=os.environ.get("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1"
 )
 
 def get_best_available_model() -> str:
-    """Fragt automatisch bei Groq nach den verfügbaren Modellen und wählt ein passendes aus."""
     try:
         models = client.models.list()
         available_ids = [m.id for m in models.data]
-        print(verfügbare_modelle := f"🔍 Verfügbare Modelle von Groq: {available_ids}")
+        print(f"🔍 Verfügbare Modelle von Groq: {available_ids}")
         
-        # Suche bevorzugt nach llama-3.3 oder anderen starken Llama-Modellen
-        for pref in ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "llama3-70b-8192"]:
+        # Bevorzuge große Sprachmodelle für Code, ignoriere Guard/Whisper-Modelle
+        preferred = ["openai/gpt-oss-120b", "qwen/qwen3.0-27b", "llama-3.3-70b-versatile"]
+        for pref in preferred:
             if pref in available_ids:
                 return pref
                 
-        # Falls keines der bevorzugten da ist, nimm das erste verfügbare Llama-Modell
+        # Nimm irgendein Modell, das kein Guard oder Whisper ist
         for m_id in available_ids:
-            if "llama" in m_id.lower():
+            if "guard" not in m_id.lower() and "whisper" not in m_id.lower():
                 return m_id
                 
-        # Fallback auf das allererste in der Liste
         if available_ids:
             return available_ids[0]
-            
     except Exception as e:
         print(f"⚠️ Konnte Modelle nicht automatisch abfragen: {e}")
         
-    return "llama-3.3-70b-versatile" # Sicherer Standard-Fallback
+    return "openai/gpt-oss-120b"
 
 MODEL_ID = get_best_available_model()
 
@@ -103,10 +99,14 @@ def main():
 
     print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
+    # Codebase-Kontext limitieren, um Token-Limits zu verhindern
     codebase_context = ""
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
-        codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{path.read_text(encoding='utf-8')}"
+        content = path.read_text(encoding="utf-8")
+        if len(content) > 3000:  # Große Dateien einkürzen
+            content = content[:3000] + "\n# ... [gekürzt] ..."
+        codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{content}"
 
     prompt = f"""
 Du bist ein autonomer Software-Architekt und Senior Python Developer.
@@ -123,9 +123,8 @@ BESTEHENDE CODEBASIS:
 
 ARCHITEKTUR-VORGABEN:
 1. Jedes neue System wird als eigenes Modul unter src/ angelegt (z.B. src/economy.py, src/combat.py).
-2. Alle Funktionen müssen deterministisch testbar sein (bei Zufallslogik immer einen optionalen 'seed' oder feste Parameter erlauben).
+2. Alle Funktionen müssen deterministisch testbar sein.
 3. Du musst zu jedem neuen Modul direkt passende Unit-Tests unter tests/test_*.py schreiben!
-4. Bestehende Klassen in src/core.py dürfen um neue Attribute/Methoden erweitert werden, solange alle alten Tests in tests/test_core.py grün bleiben.
 
 Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
 {{
@@ -182,16 +181,16 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
             else:
                 print(f"❌ Tests fehlgeschlagen:\n{test_output}")
                 last_error = test_output
-                rollback_workspace()
+                rollback_workflow()
 
         except Exception as e:
             print(f"⚠️ API-Fehler (Versuch {attempt}): {str(e)}")
             last_error = str(e)
-            rollback_workspace()
+            rollback_workflow()
 
     if not success:
         print(f"🛑 Feature konnte nach {MAX_RETRIES_PER_FEAT} Versuchen nicht stabil integriert werden.")
-        rollback_workspace()
+        rollback_workflow()
 
 if __name__ == "__main__":
     main()
