@@ -21,4 +21,4 @@
 ## Weitere Ideen (optional)
 - [x] Implementierung eines einfachen Dialogsystems (`src/dialogue.py`).
 - [x] Erweiterung des Mehrspieler‑Modus um Lobby‑ und Chat‑Funktionen.
-- [ ] Persistenz für Quest‑Fortschritt in `src/persistence.py`.
+- [x] Persistenz für Quest‑Fortschritt in `src/persistence.py`.
