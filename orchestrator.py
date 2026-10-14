@@ -47,12 +47,12 @@ def get_best_available_model() -> str:
 MODEL_ID = get_best_available_model()
 
 class FileChange(BaseModel):
-    relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/economy.py'")
-    content: str = Field(description="Der vollständige Python-Quellcode für diese Datei.")
+    relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/economy.py' oder 'TODO.md'")
+    content: str = Field(description="Der vollständige Inhalt für diese Datei.")
 
 class FeatureImplementation(BaseModel):
     explanation: str = Field(description="Kurze Erklärung der Implementierung.")
-    files: list[FileChange] = Field(description="Liste aller geänderten oder neu erstellten Dateien.")
+    files: list[FileChange] = Field(description="Liste aller geänderten oder neu erstellten Dateien (inklusive TODO.md falls erweitert).")
 
 def run_tests() -> tuple[bool, str]:
     try:
@@ -76,7 +76,7 @@ def rollback_workspace():
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Groq Auto-Discovery)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Groq Auto-Discovery + Selbst-Erweiterung)")
     print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -127,13 +127,18 @@ ARCHITEKTUR-VORGABEN:
 1. Jedes neue System wird als eigenes Modul unter src/ angelegt (z.B. src/economy.py, src/combat.py).
 2. Alle Funktionen müssen deterministisch testbar sein.
 3. Du musst zu jedem neuen Modul direkt passende Unit-Tests unter tests/test_*.py schreiben!
+4. **ROADMAP-ERWEITERUNG:** Du darfst (und sollst) bei Bedarf auch die `TODO.md` in deiner JSON-Antwort mitliefern und dort neue `- [ ] ...` Aufgaben hinzufügen, falls für den sinnvollen Ausbau des Projekts weitere Features oder Module nötig sind.
 
 Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
 {{
   "explanation": "Kurze Erklärung",
   "files": [
     {{
-      "relative_path": "pfad/zur/datei.py",
+      "relative_path": "TODO.md",
+      "content": "vollständiger inhalt der aktualisierten TODO.md (aktuelle Aufgabe als erledigt [x] markiert und ggf. neue Aufgaben hinzugefügt)"
+    }},
+    {{
+      "relative_path": "src/neues_modul.py",
       "content": "vollständiger python code..."
     }}
   ]
@@ -164,12 +169,20 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
             raw_text = response.choices[0].message.content
             data = json.loads(raw_text)
             
+            # Falls der Bot TODO.md nicht explizit mitgeschickt hat, haken wir sie im Code ab
+            todo_updated_by_bot = False
             for f_change in data.get("files", []):
                 rel_p = f_change["relative_path"]
                 full_p = WORKSPACE_DIR / rel_p
                 full_p.parent.mkdir(parents=True, exist_ok=True)
                 full_p.write_text(f_change["content"], encoding="utf-8")
                 print(f"📝 Datei geschrieben: {rel_p}")
+                if rel_p == "TODO.md":
+                    todo_updated_by_bot = True
+
+            if not todo_updated_by_bot:
+                lines[target_line_idx] = f"- [x] {target_task}"
+                TODO_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
             print("🧪 Führe Tests aus...")
             test_passed, test_output = run_tests()
@@ -177,14 +190,12 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
             if test_passed:
                 print("✅ Alle Tests erfolgreich bestanden!")
                 success = True
-                lines[target_line_idx] = f"- [x] {target_task}"
-                TODO_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
                 
-                # Automatischen Git-Commit für das neue Feature und die abgehakte TODO.md ausführen
+                # Automatischen Git-Commit für das neue Feature und die Roadmap ausführen
                 subprocess.run(["git", "config", "--global", "user.name", "AI Evolution Bot"])
                 subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"])
                 subprocess.run(["git", "add", "workspace/"])
-                subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}'"])
+                subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}' & Roadmap aktualisiert"])
                 break
             else:
                 print(f"❌ Tests fehlgeschlagen:\n{test_output}")
