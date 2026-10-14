@@ -9,12 +9,12 @@ from google.genai import types
 # --- KONFIGURATION FÜR GITHUB ACTIONS ---
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
-MODEL_ID = "gemini-3.8-flash"  # Exakt das von Google geforderte Modell
+MODEL_ID = "gemini-3.8-flash"
 
 MAX_ITERATIONS = 1                 
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
-SLEEP_BETWEEN_LOOPS = 0            
+RETRY_DELAY_SECONDS = 45           # 45 Sekunden Pause, um Server-Lastspitzen abzufedern
 
 client = genai.Client()
 
@@ -108,8 +108,8 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
         
         try:
             if attempt > 1:
-                print("⏳ Warte 10 Sekunden vor erneutem Versuch...")
-                time.sleep(10)
+                print(f"⏳ Warte {RETRY_DELAY_SECONDS} Sekunden, damit sich die Google-Server erholen können...")
+                time.sleep(RETRY_DELAY_SECONDS)
 
             response = client.models.generate_content(
                 model=MODEL_ID,
@@ -146,7 +146,7 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
                 rollback_workspace()
 
         except Exception as e:
-            print(f"⚠️ API-Fehler (Versuch {attempt}): {str(e)}")
+            print(f"⚠️ Server/API-Fehler (Versuch {attempt}): {str(e)}")
             last_error = str(e)
             rollback_workspace()
 
