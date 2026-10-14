@@ -20,8 +20,30 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1"
 )
 
-# Wir nutzen hier fest das stabile Llama 3.3 Modell, das höhere Limits im Free Tier hat
-MODEL_ID = "llama-3.3-70b-versatile"
+def get_best_available_model() -> str:
+    try:
+        models = client.models.list()
+        available_ids = [m.id for m in models.data]
+        print(f"🔍 Verfügbare Modelle von Groq: {available_ids}")
+        
+        # Bevorzuge große Textmodelle, ignoriere Guard und Whisper
+        for m_id in available_ids:
+            if "guard" not in m_id.lower() and "whisper" not in m_id.lower() and ("gpt" in m_id.lower() or "qwen" in m_id.lower() or "llama" in m_id.lower()):
+                return m_id
+                
+        # Fallback auf das erste verfügbare Modell das kein Guard/Whisper ist
+        for m_id in available_ids:
+            if "guard" not in m_id.lower() and "whisper" not in m_id.lower():
+                return m_id
+                
+        if available_ids:
+            return available_ids[0]
+    except Exception as e:
+        print(f"⚠️ Konnte Modelle nicht automatisch abfragen: {e}")
+        
+    return "openai/gpt-oss-120b"
+
+MODEL_ID = get_best_available_model()
 
 class FileChange(BaseModel):
     relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/economy.py' oder 'TODO.md'")
@@ -53,8 +75,8 @@ def rollback_workspace():
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Fester Modell-Einsatz)")
-    print(f"📌 Genutztes Modell: {MODEL_ID}")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Auto-Discovery aktiv)")
+    print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
     print("==========================================================")
 
     if not TODO_FILE.exists():
@@ -78,13 +100,13 @@ def main():
 
     print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
-    # Codebase-Kontext kompakt halten, um Rate-Limits zu vermeiden
+    # Codebase-Kontext stark komprimieren (max 800 Zeichen pro Datei), um Rate-Limits zu verhindern
     codebase_context = ""
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
         content = path.read_text(encoding="utf-8")
-        if len(content) > 1000:  # Kürzung auf 1000 Zeichen
-            content = content[:1000] + "\n# ... [gekürzt] ..."
+        if len(content) > 800:
+            content = content[:800] + "\n# ... [gekürzt] ..."
         codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{content}"
 
     prompt = f"""
