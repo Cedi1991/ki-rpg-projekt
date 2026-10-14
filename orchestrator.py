@@ -2,6 +2,7 @@ import os
 import subprocess
 import time
 import re
+import json
 from pathlib import Path
 from openai import OpenAI
 
@@ -57,7 +58,7 @@ def rollback_workspace():
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Token-Limit angepasst)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Intelligenter Multi-Parser)")
     print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -105,8 +106,8 @@ BESTEHENDE CODEBASIS (Auszug):
 
 ARCHITEKTUR-VORGABEN:
 1. Erstelle das nötige Modul unter src/ und passende Unit-Tests unter tests/test_*.py.
-2. Achte darauf, dass Methoden von bestehenden Klassen (wie Player) korrekt berücksichtigt oder erweitert werden.
-3. Gib den Code in Markdown-Blöcken an und schreibe ÜBER jeden Block den Dateipfad im Format: `### DATEI: src/dein_modul.py`
+2. Schreibe sauberen, funktionsfähigen Python-Code.
+3. Verwende Markdown-Codeblöcke und schreibe den Dateipfad (z.B. src/persistence.py oder tests/test_persistence.py) direkt vor den jeweiligen Block.
 """
 
     success = False
@@ -120,28 +121,50 @@ ARCHITEKTUR-VORGABEN:
                 print("⏳ Warte 10 Sekunden...")
                 time.sleep(10)
 
-            # max_tokens auf 1000 reduziert, um das Qwen-Limit nicht zu überschreiten[span_4](start_span)[span_4](end_span)
             response = client.chat.completions.create(
                 model=MODEL_ID,
                 messages=[
                     {"role": "system", "content": "Du bist ein präziser Programmier-Assistent."},
                     {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER BEIM TESTEN:\n{last_error}" if last_error else "")}
                 ],
-                max_tokens=1000,
+                max_tokens=2000,
                 temperature=0.2,
             )
             
             raw_text = response.choices[0].message.content
-            
-            pattern = r"###\s*DATEI:\s*([^\n]+)\s*```python\s*(.*?)```"
-            matches = re.findall(pattern, raw_text, re.DOTALL)
-            
+            matches = []
+
+            # 1. Versuch: JSON-Struktur parsen (falls vorhanden)
+            try:
+                data = json.loads(raw_text)
+                if "files" in data:
+                    for f in data["files"]:
+                        matches.append((f["relative_path"], f["content"]))
+            except Exception:
+                pass
+
+            # 2. Versuch: Explizite Dateimarkierungen via Regex suchen
             if not matches:
-                pattern_alt = r"###\s*DATEI:\s*([^\n]+)\s*```\s*(.*?)```"
-                matches = re.findall(pattern_alt, raw_text, re.DOTALL)
+                pattern = r"(?:###|##|\*\*)\s*(?:DATEI|File):\s*([^\n`]+).*?```(?:python)?\s*(.*?)```"
+                matches = re.findall(pattern, raw_text, re.DOTALL | re.IGNORECASE)
+
+            # 3. Versuch (Fallback): Alle Codeblöcke extrahieren und intelligent zuordnen
+            if not matches:
+                code_blocks = re.findall(r"```(?:python)?\s*(.*?)```", raw_text, re.DOTALL)
+                if code_blocks:
+                    # Versuche den Dateinamen aus der Aufgabe zu erkennen
+                    target_file = "src/modul.py"
+                    for word in target_task.split():
+                        if "src/" in word or ".py" in word:
+                            target_file = word.strip("`'\".,()")
+                    
+                    matches.append((target_file, code_blocks[0]))
+                    if len(code_blocks) >= 2:
+                        test_file = f"tests/test_{Path(target_file).name}"
+                        matches.append((test_file, code_blocks[1]))
 
             if not matches:
-                raise ValueError("Die KI hat keine lesbaren Dateiblöcke im erwarteten Format zurückgegeben.")
+                raise ValueError("Die KI konnte keine auswertbaren Codeblöcke generieren.")
 
             for rel_path, file_content in matches:
                 rel_p = rel_path.strip()
