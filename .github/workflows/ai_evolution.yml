@@ -2,7 +2,7 @@ name: Autonome KI-Evolutionsschleife
 
 on:
   schedule:
-    - cron: '* * * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
