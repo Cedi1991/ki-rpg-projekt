@@ -12,5 +12,10 @@
 - [x] **Verbrauchsgüter & Buffs (`src/consumables.py`)**: Ermögliche das Benutzen von Heiltränken oder Nahrung aus dem Inventar (`use_item(player, item_name)`), um `hp` bis maximal `max_hp` wiederherzustellen.
 - [x] **Speichern & Laden (`src/persistence.py`)**: Implementiere `save_player_to_json(player) -> str` und `load_player_from_json(json_str) -> Player`, um den kompletten Spielstand (inkl. Inventar) zu serialisieren.
 - [x] **Mehrspieler‑Modus (`src/multiplayer.py`)**: Netzwerk‑Synchronisation, Server‑Client‑Architektur und Spieler‑Interaktion.
-- [ ] **Quests & Storyline (`src/quests.py`)**: Quest‑Logik, Belohnungen und Fortschritts‑Tracking.
+- [x] **Quests & Storyline (`src/quests.py`)**: Quest‑Logik, Belohnungen und Fortschritts‑Tracking.
 - [ ] **Grafische Benutzeroberfläche (`src/gui.py`)**: Grundlegendes UI mit `tkinter` oder `pygame` für Inventar‑Anzeige und Interaktionen.
+
+## Weitere Ideen (optional)
+- [ ] Implementierung eines einfachen Dialogsystems (`src/dialogue.py`).
+- [ ] Erweiterung des Mehrspieler‑Modus um Lobby‑ und Chat‑Funktionen.
+- [ ] Persistenz für Quest‑Fortschritt in `src/persistence.py`.
