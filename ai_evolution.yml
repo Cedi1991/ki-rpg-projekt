@@ -1,0 +1,54 @@
+name: Autonomous AI Evolution Loop
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ai-evolution-group
+  cancel-in-progress: false
+
+jobs:
+  evolve-code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Repository herunterladen
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Python 3.12 einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 📦 Abhängigkeiten installieren
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-genai pytest pydantic
+
+      - name: 🤖 Git-Identität für den KI-Bot setzen
+        run: |
+          git config user.name "AI Evolution Bot"
+          git config user.email "actions@github.com"
+
+      - name: 🚀 Orchestrator ausführen (1 Feature planen, coden & testen)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python orchestrator.py
+
+      - name: 📤 Neue Features zurück zu GitHub pushen
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "Neues Feature erfolgreich getestet! Pushe zu GitHub..."
+            git push origin HEAD:main
+          else
+            echo "Kein neuer Commit (Tests fehlgeschlagen & Rollback ausgeführt)."
+          fi
