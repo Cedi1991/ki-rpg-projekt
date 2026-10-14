@@ -1,55 +1,54 @@
-name: Autonomous AI Evolution Loop
+Name: Autonome KI-Evolutionsschleife
 
-on:
-  schedule:
-    - cron: "* * * * *"
-  workflow_dispatch:
+An:
+  Zeitplan:
+    - Cron: '* * * * *'
+  Workflow-Versand:
 
-permissions:
-  contents: write
+Berechtigungen:
+  Inhalt: schreiben
 
-concurrency:
-  group: ai-evolution-group
-  cancel-in-progress: false
+Gleichzeitigkeit:
+  Gruppe: KI-Evolutionsgruppe
+  laufende Stornierung: FALSCH
 
-jobs:
+Jobs:
   evolve-code:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    Läuft an: ubuntu-latest
+    Zeitüberschreitungminuten: 10
 
-    steps:
-      - name: 📥 Repository herunterladen
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    Schritte:
+      - Name: 📦 Repository herunterladen
+        Verwendung: Aktionen/Checkout@v4
+        mit:
+          Abruftiefe: 0
 
-      - name: 🐍 Python 3.12 einrichten
-        uses: actions/setup-python@v5
-        with:
+      - Name: 🐍 Python 3.12 einrichten
+        Verwendung: Aktionen/Setup-Python@v5
+        mit:
           python-version: "3.12"
 
-      - name: 📦 Abhängigkeiten installieren
-        run: |
+      - Name: 📦 Abhängigkeiten installieren
+        laufen: |
           python -m pip install --upgrade pip
-          pip install google-genai pytest pydantic
+          pip install openai pytest pydantic
 
-      - name: 🤖 Git-Identität für den KI-Bot setzen
-        run: |
+      - Name: 🤖 Git-Identität für den KI-Bot setzen
+        laufen: |
           git config user.name "AI Evolution Bot"
           git config user.email "actions@github.com"
 
-      - name: 🚀 Orchestrator ausführen (1 Feature planen, coden & testen)
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
+      - Name: 🚀 Orchestrator ausführen (1 Feature planen, coden & testen)
+        Umgebung:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        laufen: |
           python orchestrator.py
 
-      - name: 📤 Neue Features zurück zu GitHub pushen
-        run: |
+      - Name: 📦 Neue Features zurück zu GitHub pushen
+        laufen: |
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
-            echo "Neues Feature erfolgreich getestet! Pushe zu GitHub..."
+            echo „Neues Feature erfolgreich getestet! Pushe zu GitHub.“
             git push origin HEAD:main
-          else
-            echo "Kein neuer Commit (Tests fehlgeschlagen & Rollback ausgeführt)."
+          anders
+            echo „Kein neuer Commit (Tests fehlgeschlagen & Rollback ausgeführt).“
           fi
-          
