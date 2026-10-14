@@ -13,7 +13,7 @@
 - [x] **Speichern & Laden (`src/persistence.py`)**: Implementiere `save_player_to_json(player) -> str` und `load_player_from_json(json_str) -> Player`, um den kompletten Spielstand (inkl. Inventar) zu serialisieren.
 - [x] **Mehrspieler‑Modus (`src/multiplayer.py`)**: Netzwerk‑Synchronisation, Server‑Client‑Architektur und Spieler‑Interaktion.
 - [x] **Quests & Storyline (`src/quests.py`)**: Quest‑Logik, Belohnungen und Fortschritts‑Tracking.
-- [ ] **Grafische Benutzeroberfläche (`src/gui.py`)**: Grundlegendes UI mit `tkinter` oder `pygame` für Inventar‑Anzeige und Interaktionen.
+- [x] **Grafische Benutzeroberfläche (`src/gui.py`)**: Grundlegendes UI mit `tkinter` für Inventar‑Anzeige und Interaktionen.
 
 ## Weitere Ideen (optional)
 - [ ] Implementierung eines einfachen Dialogsystems (`src/dialogue.py`).
