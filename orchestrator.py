@@ -18,12 +18,12 @@ client = genai.Client()
 
 def resolve_model_id() -> str:
     """Fragt automatisch bei der API ab, welches Flash-Modell verfügbar ist."""
-    preferred_candidates = ["gemini-3.8-flash", "gemini-3.0-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    # Bewährte, stabile Modelle zuerst priorisieren, um Server-Lastspitzen (503) zu umgehen
+    preferred_candidates = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.0-flash", "gemini-3.8-flash"]
     try:
         print("🔍 Frage verfügbare Modelle von der API ab...")
         available_models = [m.name for m in client.models.list()]
         
-        # Versuche zuerst unseren Top-Favoriten zu finden
         for candidate in preferred_candidates:
             for model_name in available_models:
                 if candidate in model_name:
@@ -31,7 +31,6 @@ def resolve_model_id() -> str:
                     print(f"✅ Automatisch gewähltes Modell: {clean_name}")
                     return clean_name
                     
-        # Fallback auf das erste verfügbare Flash-Modell
         for model_name in available_models:
             if "flash" in model_name.lower():
                 clean_name = model_name.replace("models/", "")
@@ -41,7 +40,7 @@ def resolve_model_id() -> str:
     except Exception as e:
         print(f"⚠️ Konnte Modelle nicht automatisch auflisten ({e}), nutze Standard-Fallback.")
         
-    return "gemini-3.8-flash"
+    return "gemini-2.0-flash"
 
 # Dynamische Modell-Ermittlung beim Start
 MODEL_ID = resolve_model_id()
