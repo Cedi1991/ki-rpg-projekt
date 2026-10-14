@@ -6,6 +6,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from openai import OpenAI
 
+# --- KONFIGURATION FÜR GITHUB ACTIONS ---
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
 
@@ -13,6 +14,7 @@ MAX_ITERATIONS = 1
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
 
+# Verbindung zur kostenlosen Groq-API
 client = OpenAI(
     api_key=os.environ.get("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1"
@@ -177,20 +179,26 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
                 success = True
                 lines[target_line_idx] = f"- [x] {target_task}"
                 TODO_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
+                
+                # Automatischen Git-Commit für das neue Feature und die abgehakte TODO.md ausführen
+                subprocess.run(["git", "config", "--global", "user.name", "AI Evolution Bot"])
+                subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"])
+                subprocess.run(["git", "add", "workspace/"])
+                subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}'"])
                 break
             else:
                 print(f"❌ Tests fehlgeschlagen:\n{test_output}")
                 last_error = test_output
-                rollback_workflow()
+                rollback_workspace()
 
         except Exception as e:
             print(f"⚠️ API-Fehler (Versuch {attempt}): {str(e)}")
             last_error = str(e)
-            rollback_workflow()
+            rollback_workspace()
 
     if not success:
         print(f"🛑 Feature konnte nach {MAX_RETRIES_PER_FEAT} Versuchen nicht stabil integriert werden.")
-        rollback_workflow()
+        rollback_workspace()
 
 if __name__ == "__main__":
     main()
