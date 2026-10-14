@@ -39,12 +39,12 @@ def get_best_available_model() -> str:
 MODEL_ID = get_best_available_model()
 
 class FileChange(BaseModel):
-    relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/dialogue.py' oder 'tests/test_dialogue.py'")
+    relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/")
     content: str = Field(description="Der vollständige Python-Quellcode für diese Datei.")
 
 class FeatureImplementation(BaseModel):
     explanation: str = Field(description="Kurze Erklärung der Implementierung.")
-    files: list[FileChange] = Field(description="Liste der zu erstellenden oder geänderten Programm- und Testdateien.")
+    files: list[FileChange] = Field(description="Liste der zu erstellenden oder geänderten Dateien.")
 
 def run_tests() -> tuple[bool, str]:
     try:
@@ -68,7 +68,7 @@ def rollback_workspace():
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Stabile Token-Optimierung)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Token-Limit Erhöhung)")
     print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -93,7 +93,6 @@ def main():
 
     print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
-    # Codebase-Kontext sehr kompakt halten (max 500 Zeichen pro Datei), um Limits zu schützen
     codebase_context = ""
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
@@ -106,7 +105,7 @@ def main():
 Du bist ein autonomer Software-Architekt und Senior Python Developer.
 Dein Ziel ist es, das modulare RPG- und Wirtschaftssimulations-Projekt Schritt für Schritt zu erweitern.
 
-AKTUELLE ROADMAP (TODO.md - Nimm dir NUR die aktuelle Aufgabe vor):
+AKTUELLE ROADMAP (TODO.md):
 {todo_content}
 
 ZU LÖSENDE AUFGABE:
@@ -116,9 +115,9 @@ BESTEHENDE CODEBASIS (Auszug):
 {codebase_context}
 
 ARCHITEKTUR-VORGABEN:
-1. Erstelle das nötige Modul unter src/ (z.B. src/dialogue.py) und die passenden Unit-Tests unter tests/test_*.py.
-2. Schreibe NUR sauberen, funktionsfähigen Python-Code.
-3. Schicke KEINE TODO.md in deiner JSON-Antwort mit – das Abhaken übernimmt das System automatisch.
+1. Erstelle das nötige Modul unter src/ und passende Unit-Tests unter tests/test_*.py.
+2. Schreibe sauberen, funktionsfähigen Python-Code.
+3. Schicke KEINE TODO.md in deiner JSON-Antwort mit.
 
 Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
 {{
@@ -144,16 +143,18 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
         
         try:
             if attempt > 1:
-                print("⏳ Warte 10 Sekunden wegen Rate Limit...")
+                print("⏳ Warte 10 Sekunden...")
                 time.sleep(10)
 
+            # max_tokens hinzugefügt, damit längere Antworten nicht abgeschnitten werden
             response = client.chat.completions.create(
                 model=MODEL_ID,
                 messages=[
-                    {"role": "system", "content": "Du bist ein präziser Programmier-Assistent und antwortest strikt in validem JSON ohne Markdown-Blöcke darum."},
+                    {"role": "system", "content": "Du bist ein präziser Programmier-Assistent und antwortest strikt in validem JSON."},
                     {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER BEIM TESTEN:\n{last_error}" if last_error else "")}
                 ],
                 response_format={"type": "json_object"},
+                max_tokens=8192,
                 temperature=0.2,
             )
             
@@ -167,7 +168,6 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
                 full_p.write_text(f_change["content"], encoding="utf-8")
                 print(f"📝 Datei geschrieben: {rel_p}")
 
-            # Automatisches Abhaken der aktuellen Aufgabe im Skript
             lines[target_line_idx] = f"- [x] {target_task}"
             TODO_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
