@@ -9,8 +9,7 @@ from google.genai import types
 # --- KONFIGURATION FÜR GITHUB ACTIONS ---
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
-# Fest auf ein stabiles Modell gesetzt, das nicht überlastet ist:
-MODEL_ID = "gemini-1.5-flash" 
+MODEL_ID = "gemini-2.0-flash"  # Das im neuen SDK standardmäßig unterstützte und stabile Modell
 
 MAX_ITERATIONS = 1                 
 MAX_RETRIES_PER_FEAT = 3           
@@ -112,6 +111,7 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
                 print("⏳ Warte 10 Sekunden vor erneutem Versuch...")
                 time.sleep(10)
 
+            # Direkter, sauberer Aufruf über den Client mit korrekter Syntax für das neue SDK
             response = client.models.generate_content(
                 model=MODEL_ID,
                 contents=prompt + (f"\n\nLETZTER FEHLER BEIM TESTEN:\n{last_error}" if last_error else ""),
