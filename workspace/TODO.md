@@ -10,7 +10,7 @@
 - [x] **Kampfsystem (`src/combat.py`):** Implementiere eine `Monster`-Datenklasse (Name, HP, Angriff, Gold-Drop) und eine Funktion `resolve_combat_round(player, monster)`, die Schaden berechnet, Tod prüft und bei Sieg automatisch Gold an den Spieler vergibt.
 - [x] **Crafting & Werkstätten (`src/crafting.py`):** Implementiere ein Rezept-System (`Recipe`), mit dem ein Spieler mehrere Rohstoffe aus seinem Inventar zu einem höherwertigen Item kombinieren kann (`craft_item(player, recipe)`).
 - [x] **Verbrauchsgüter & Buffs (`src/consumables.py`):** Ermögliche das Benutzen von Heiltränken oder Nahrung aus dem Inventar (`use_item(player, item_name)`), um `hp` bis maximal `max_hp` wiederherzustellen.
-- [ ] **Speichern & Laden (`src/persistence.py`):** Implementiere `save_player_to_json(player) -> str` und `load_player_from_json(json_str) -> Player`, um den kompletten Spielstand (inkl. Inventar) zu serialisieren.
-
-## Erledigt
-- [x] Basis-Datenmodell (`Item`, `Player`), Gold-Transaktionen und Inventar-Verwaltung in `src/core.py` angelegt.
+- [x] **Speichern & Laden (`src/persistence.py`):** Implementiere `save_player_to_json(player) -> str` und `load_player_from_json(json_str) -> Player`, um den kompletten Spielstand (inkl. Inventar) zu serialisieren.
+- [ ] **Mehrspieler‑Modus (`src/multiplayer.py`):** Netzwerk‑Synchronisation, Server‑Client‑Architektur und Spieler‑Interaktion.
+- [ ] **Quests & Storyline (`src/quests.py`):** Quest‑Logik, Belohnungen und Fortschritts‑Tracking.
+- [ ] **Grafische Benutzeroberfläche (`src/gui.py`):** Grundlegendes UI mit `tkinter` oder `pygame` für Inventar‑Anzeige und Interaktionen.
