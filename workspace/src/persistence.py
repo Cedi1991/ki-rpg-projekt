@@ -1,50 +1,74 @@
-import json
-from src.core import Player, Item
+# src/core.py
+"""Kern-Datenmodelle für die RPG- und Wirtschaftssimulation."""
 
-def _item_to_dict(item: Item) -> dict:
-    """Konvertiert ein Item in ein serialisierbares Dict."""
-    return {
-        "name": item.name,
-        "category": item.category,
-        "base_value": item.base_value,
-        "quantity": item.quantity,
-    }
+from dataclasses import dataclass, field
+from typing import List, Dict, Any
+import sys
+import os
 
-def _dict_to_item(data: dict) -> Item:
-    """Erstellt ein Item aus einem Dict, das mit ``_item_to_dict`` erzeugt wurde."""
-    return Item(
-        name=data["name"],
-        category=data["category"],
-        base_value=data["base_value"],
-        quantity=data.get("quantity", 1),
-    )
+# Wir müssen vorsichtig sein mit Import-Zyklen. 
+# Da quests.py von core.py abhängt (Item, Player), können wir hier nicht direkt Quest importieren.
+# Stattdessen speichern wir in Player eine Liste von Objekten, die als "Quest" interpretiert werden können,
+# oder wir verwenden eine schwache Referenz / Typ-Hinweis.
+# Für die Persistenz ist es am einfachsten, wenn Player eine Liste von Quest-Objekten hält.
+# Da wir core.py nicht stark an quests.py koppeln wollen (um Zyklen zu vermeiden),
+# definieren wir hier nur das Attribut. Die konkrete Klasse wird in persistence.py gehandhabt.
 
-def save_player_to_json(player: Player) -> str:
-    """Serialisiert einen ``Player`` inklusive Inventar zu einem JSON‑String.
+@dataclass
+class Item:
+    name: str
+    category: str  # z.B. "weapon", "potion", "material", "quest"
+    base_value: int
+    quantity: int = 1
 
-    Der Rückgabewert ist ein ``str`` und kann direkt in Dateien geschrieben
-    oder über das Netzwerk gesendet werden.
-    """
-    player_dict = {
-        "name": player.name,
-        "hp": player.hp,
-        "max_hp": player.max_hp,
-        "gold": player.gold,
-        "inventory": [_item_to_dict(item) for item in player.inventory.values()],
-    }
-    return json.dumps(player_dict, ensure_ascii=False)
+    def __post_init__(self) -> None:
+        if self.base_value < 0:
+            raise ValueError("base_value darf nicht negativ sein.")
+        if self.quantity < 0:
+            raise ValueError("quantity darf nicht negativ sein.")
 
-def load_player_from_json(json_str: str) -> Player:
-    """Deserialisiert einen JSON‑String, der von ``save_player_to_json`` erzeugt wurde,
-    und gibt ein neues ``Player``‑Objekt zurück.
-    """
-    data = json.loads(json_str)
-    player = Player(
-        name=data["name"],
-        hp=data.get("hp", 100),
-        max_hp=data.get("max_hp", 100),
-        gold=data.get("gold", 0),
-    )
-    for item_data in data.get("inventory", []):
-        player.add_item(_dict_to_item(item_data))
-    return player
+
+@dataclass
+class Player:
+    name: str
+    hp: int = 100
+    max_hp: int = 100
+    gold: int = 50
+    inventory: Dict[str, Item] = field(default_factory=dict)
+    # Neues Attribut für Quests
+    quests: List[Any] = field(default_factory=list)  # List[Quest]
+
+    def __post_init__(self) -> None:
+        if self.hp > self.max_hp:
+            self.hp = self.max_hp
+        if self.hp < 0:
+            self.hp = 0
+
+    @property
+    def is_alive(self) -> bool:
+        return self.hp > 0
+
+    def take_damage(self, amount: int) -> None:
+        self.hp -= amount
+        if self.hp < 0:
+            self.hp = 0
+
+    def heal(self, amount: int) -> None:
+        self.hp += amount
+        if self.hp > self.max_hp:
+            self.hp = self.max_hp
+
+    def add_item(self, item: Item) -> None:
+        if item.name in self.inventory:
+            self.inventory[item.name].quantity += item.quantity
+        else:
+            self.inventory[item.name] = item
+
+    def remove_item(self, item_name: str, quantity: int = 1) -> bool:
+        if item_name in self.inventory:
+            if self.inventory[item_name].quantity >= quantity:
+                self.inventory[item_name].quantity -= quantity
+                if self.inventory[item_name].quantity == 0:
+                    del self.inventory[item_name]
+                return True
+        return False

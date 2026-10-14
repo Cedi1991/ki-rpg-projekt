@@ -16,7 +16,7 @@
 - [x] **Grafische Benutzeroberfläche (`src/gui.py`)**: Grundlegendes UI mit `tkinter` für Inventar‑Anzeige und Interaktionen.
 - [x] **Implementierung eines einfachen Dialogsystems (`src/dialogue.py`)**
 - [x] Erweiterung des Mehrspieler‑Modus um Lobby‑ und Chat‑Funktionen.
-- [ ] Persistenz für Quest‑Fortschritt in `src/persistence.py`.
+- [x] Persistenz für Quest‑Fortschritt in `src/persistence.py`.
 
 ## Weitere Ideen (optional)
 - [ ] Implementierung eines einfachen Dialogsystems (`src/dialogue.py`).
