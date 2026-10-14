@@ -9,17 +9,44 @@ from openai import OpenAI
 # --- KONFIGURATION FÜR GITHUB ACTIONS ---
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
-MODEL_ID = "llama-3.1-70b-versatile"
 
 MAX_ITERATIONS = 1                 
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
 
-# Verbindung zur kostenlosen Groq-API über den OpenAI-kompatiblen Client
+# Verbindung zur kostenlosen Groq-API
 client = OpenAI(
     api_key=os.environ.get("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1"
 )
+
+def get_best_available_model() -> str:
+    """Fragt automatisch bei Groq nach den verfügbaren Modellen und wählt ein passendes aus."""
+    try:
+        models = client.models.list()
+        available_ids = [m.id for m in models.data]
+        print(verfügbare_modelle := f"🔍 Verfügbare Modelle von Groq: {available_ids}")
+        
+        # Suche bevorzugt nach llama-3.3 oder anderen starken Llama-Modellen
+        for pref in ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "llama3-70b-8192"]:
+            if pref in available_ids:
+                return pref
+                
+        # Falls keines der bevorzugten da ist, nimm das erste verfügbare Llama-Modell
+        for m_id in available_ids:
+            if "llama" in m_id.lower():
+                return m_id
+                
+        # Fallback auf das allererste in der Liste
+        if available_ids:
+            return available_ids[0]
+            
+    except Exception as e:
+        print(f"⚠️ Konnte Modelle nicht automatisch abfragen: {e}")
+        
+    return "llama-3.3-70b-versatile" # Sicherer Standard-Fallback
+
+MODEL_ID = get_best_available_model()
 
 class FileChange(BaseModel):
     relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/economy.py'")
@@ -51,8 +78,8 @@ def rollback_workspace():
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Groq Free Tier)")
-    print(f"📌 Genutztes Modell: {MODEL_ID}")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Groq Auto-Discovery)")
+    print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
     print("==========================================================")
 
     if not TODO_FILE.exists():
@@ -103,7 +130,7 @@ ARCHITEKTUR-VORGABEN:
 Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
 {{
   "explanation": "Kurze Erklärung",
-  - "files": [
+  "files": [
     {{
       "relative_path": "pfad/zur/datei.py",
       "content": "vollständiger python code..."
