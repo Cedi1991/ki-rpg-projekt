@@ -9,7 +9,7 @@ from openai import OpenAI
 # --- KONFIGURATION FÜR GITHUB ACTIONS ---
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
-MODEL_ID = "llama-3.3-70b-versatile" # Komplett kostenlos über Groq und extrem schnell
+MODEL_ID = "llama-3.1-70b-versatile"
 
 MAX_ITERATIONS = 1                 
 MAX_RETRIES_PER_FEAT = 3           
