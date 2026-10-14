@@ -57,7 +57,7 @@ def rollback_workspace():
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Robuster Text-Parser)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Token-Limit angepasst)")
     print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -104,9 +104,9 @@ BESTEHENDE CODEBASIS (Auszug):
 {codebase_context}
 
 ARCHITEKTUR-VORGABEN:
-1. Erstelle das nötige Modul unter src/ (z.B. src/persistence.py) und passende Unit-Tests unter tests/test_*.py.
-2. Schreibe sauberen, funktionsfähigen Python-Code.
-3. Gib den Code in Markdown-Blöcken an und schreibe ÜBER jeden Block den Dateipfad als Kommentar oder Überschrift im Format: `### DATEI: src/dein_modul.py`
+1. Erstelle das nötige Modul unter src/ und passende Unit-Tests unter tests/test_*.py.
+2. Achte darauf, dass Methoden von bestehenden Klassen (wie Player) korrekt berücksichtigt oder erweitert werden.
+3. Gib den Code in Markdown-Blöcken an und schreibe ÜBER jeden Block den Dateipfad im Format: `### DATEI: src/dein_modul.py`
 """
 
     success = False
@@ -120,25 +120,23 @@ ARCHITEKTUR-VORGABEN:
                 print("⏳ Warte 10 Sekunden...")
                 time.sleep(10)
 
+            # max_tokens auf 1000 reduziert, um das Qwen-Limit nicht zu überschreiten[span_4](start_span)[span_4](end_span)
             response = client.chat.completions.create(
                 model=MODEL_ID,
                 messages=[
                     {"role": "system", "content": "Du bist ein präziser Programmier-Assistent."},
                     {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER BEIM TESTEN:\n{last_error}" if last_error else "")}
                 ],
-                max_tokens=8192,
+                max_tokens=1000,
                 temperature=0.2,
             )
             
             raw_text = response.choices[0].message.content
             
-            # Dateien über Regex aus den Markdown-Blöcken extrahieren
-            # Erwartet Format: ### DATEI: pfad/zu/datei.py gefolgt von ```python ... ```
             pattern = r"###\s*DATEI:\s*([^\n]+)\s*```python\s*(.*?)```"
             matches = re.findall(pattern, raw_text, re.DOTALL)
             
             if not matches:
-                # Fallbversuch für andere Block-Formate
                 pattern_alt = r"###\s*DATEI:\s*([^\n]+)\s*```\s*(.*?)```"
                 matches = re.findall(pattern_alt, raw_text, re.DOTALL)
 
