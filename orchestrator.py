@@ -76,7 +76,7 @@ def rollback_workspace():
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Groq Auto-Discovery + Selbst-Erweiterung)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Groq Auto-Discovery + Token-Optimierung)")
     print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -101,13 +101,13 @@ def main():
 
     print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
-    # Codebase-Kontext limitieren, um Token-Limits zu verhindern
+    # Codebase-Kontext stärker limitieren, um das 8000-Token-Limit nicht zu überschreiten
     codebase_context = ""
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
         content = path.read_text(encoding="utf-8")
-        if len(content) > 3000:  # Große Dateien einkürzen
-            content = content[:3000] + "\n# ... [gekürzt] ..."
+        if len(content) > 1500:  # Streichgrenze auf 1500 Zeichen gesenkt
+            content = content[:1500] + "\n# ... [gekürzt] ..."
         codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{content}"
 
     prompt = f"""
@@ -169,7 +169,6 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
             raw_text = response.choices[0].message.content
             data = json.loads(raw_text)
             
-            # Falls der Bot TODO.md nicht explizit mitgeschickt hat, haken wir sie im Code ab
             todo_updated_by_bot = False
             for f_change in data.get("files", []):
                 rel_p = f_change["relative_path"]
