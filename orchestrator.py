@@ -24,34 +24,27 @@ def get_best_available_model() -> str:
     try:
         models = client.models.list()
         available_ids = [m.id for m in models.data]
-        print(f"🔍 Verfügbare Modelle von Groq: {available_ids}")
-        
-        # Bevorzuge große Textmodelle, ignoriere Guard und Whisper
         for m_id in available_ids:
             if "guard" not in m_id.lower() and "whisper" not in m_id.lower() and ("gpt" in m_id.lower() or "qwen" in m_id.lower() or "llama" in m_id.lower()):
                 return m_id
-                
-        # Fallback auf das erste verfügbare Modell das kein Guard/Whisper ist
         for m_id in available_ids:
             if "guard" not in m_id.lower() and "whisper" not in m_id.lower():
                 return m_id
-                
         if available_ids:
             return available_ids[0]
     except Exception as e:
         print(f"⚠️ Konnte Modelle nicht automatisch abfragen: {e}")
-        
     return "openai/gpt-oss-120b"
 
 MODEL_ID = get_best_available_model()
 
 class FileChange(BaseModel):
-    relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/economy.py' oder 'TODO.md'")
-    content: str = Field(description="Der vollständige Inhalt für diese Datei.")
+    relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/dialogue.py' oder 'tests/test_dialogue.py'")
+    content: str = Field(description="Der vollständige Python-Quellcode für diese Datei.")
 
 class FeatureImplementation(BaseModel):
     explanation: str = Field(description="Kurze Erklärung der Implementierung.")
-    files: list[FileChange] = Field(description="Liste aller geänderten oder neu erstellten Dateien.")
+    files: list[FileChange] = Field(description="Liste der zu erstellenden oder geänderten Programm- und Testdateien.")
 
 def run_tests() -> tuple[bool, str]:
     try:
@@ -75,7 +68,7 @@ def rollback_workspace():
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Auto-Discovery aktiv)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Stabile Token-Optimierung)")
     print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -100,45 +93,44 @@ def main():
 
     print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
-    # Codebase-Kontext stark komprimieren (max 800 Zeichen pro Datei), um Rate-Limits zu verhindern
+    # Codebase-Kontext sehr kompakt halten (max 500 Zeichen pro Datei), um Limits zu schützen
     codebase_context = ""
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
         content = path.read_text(encoding="utf-8")
-        if len(content) > 800:
-            content = content[:800] + "\n# ... [gekürzt] ..."
+        if len(content) > 500:
+            content = content[:500] + "\n# ... [gekürzt] ..."
         codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{content}"
 
     prompt = f"""
 Du bist ein autonomer Software-Architekt und Senior Python Developer.
 Dein Ziel ist es, das modulare RPG- und Wirtschaftssimulations-Projekt Schritt für Schritt zu erweitern.
 
-AKTUELLE ROADMAP (TODO.md):
+AKTUELLE ROADMAP (TODO.md - Nimm dir NUR die aktuelle Aufgabe vor):
 {todo_content}
 
 ZU LÖSENDE AUFGABE:
 {target_task}
 
-BESTEHENDE CODEBASIS:
+BESTEHENDE CODEBASIS (Auszug):
 {codebase_context}
 
 ARCHITEKTUR-VORGABEN:
-1. Jedes neue System wird als eigenes Modul unter src/ angelegt (z.B. src/economy.py, src/combat.py).
-2. Alle Funktionen müssen deterministisch testbar sein.
-3. Du musst zu jedem neuen Modul direkt passende Unit-Tests unter tests/test_*.py schreiben!
-4. **ROADMAP-ERWEITERUNG:** Du darfst bei Bedarf auch die `TODO.md` in deiner JSON-Antwort mitliefern und dort neue `- [ ] ...` Aufgaben hinzufügen.
+1. Erstelle das nötige Modul unter src/ (z.B. src/dialogue.py) und die passenden Unit-Tests unter tests/test_*.py.
+2. Schreibe NUR sauberen, funktionsfähigen Python-Code.
+3. Schicke KEINE TODO.md in deiner JSON-Antwort mit – das Abhaken übernimmt das System automatisch.
 
 Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
 {{
   "explanation": "Kurze Erklärung",
   "files": [
     {{
-      "relative_path": "TODO.md",
-      "content": "vollständiger inhalt der aktualisierten TODO.md"
+      "relative_path": "src/dein_modul.py",
+      "content": "vollständiger python code..."
     }},
     {{
-      "relative_path": "src/neues_modul.py",
-      "content": "vollständiger python code..."
+      "relative_path": "tests/test_dein_modul.py",
+      "content": "vollständiger test code..."
     }}
   ]
 }}
@@ -158,7 +150,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
             response = client.chat.completions.create(
                 model=MODEL_ID,
                 messages=[
-                    {"role": "system", "content": "Du bist ein präziser Programmier-Assistent und antwortest strikt in validem JSON."},
+                    {"role": "system", "content": "Du bist ein präziser Programmier-Assistent und antwortest strikt in validem JSON ohne Markdown-Blöcke darum."},
                     {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER BEIM TESTEN:\n{last_error}" if last_error else "")}
                 ],
                 response_format={"type": "json_object"},
@@ -168,19 +160,16 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
             raw_text = response.choices[0].message.content
             data = json.loads(raw_text)
             
-            todo_updated_by_bot = False
             for f_change in data.get("files", []):
                 rel_p = f_change["relative_path"]
                 full_p = WORKSPACE_DIR / rel_p
                 full_p.parent.mkdir(parents=True, exist_ok=True)
                 full_p.write_text(f_change["content"], encoding="utf-8")
                 print(f"📝 Datei geschrieben: {rel_p}")
-                if rel_p == "TODO.md":
-                    todo_updated_by_bot = True
 
-            if not todo_updated_by_bot:
-                lines[target_line_idx] = f"- [x] {target_task}"
-                TODO_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            # Automatisches Abhaken der aktuellen Aufgabe im Skript
+            lines[target_line_idx] = f"- [x] {target_task}"
+            TODO_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
             print("🧪 Führe Tests aus...")
             test_passed, test_output = run_tests()
@@ -192,7 +181,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
                 subprocess.run(["git", "config", "--global", "user.name", "AI Evolution Bot"])
                 subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"])
                 subprocess.run(["git", "add", "workspace/"])
-                subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}' & Roadmap aktualisiert"])
+                subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}'"])
                 break
             else:
                 print(f"❌ Tests fehlgeschlagen:\n{test_output}")
