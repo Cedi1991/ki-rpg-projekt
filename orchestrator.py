@@ -20,31 +20,8 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1"
 )
 
-def get_best_available_model() -> str:
-    try:
-        models = client.models.list()
-        available_ids = [m.id for m in models.data]
-        print(f"🔍 Verfügbare Modelle von Groq: {available_ids}")
-        
-        # Bevorzuge große Sprachmodelle für Code, ignoriere Guard/Whisper-Modelle
-        preferred = ["openai/gpt-oss-120b", "qwen/qwen3.0-27b", "llama-3.3-70b-versatile"]
-        for pref in preferred:
-            if pref in available_ids:
-                return pref
-                
-        # Nimm irgendein Modell, das kein Guard oder Whisper ist
-        for m_id in available_ids:
-            if "guard" not in m_id.lower() and "whisper" not in m_id.lower():
-                return m_id
-                
-        if available_ids:
-            return available_ids[0]
-    except Exception as e:
-        print(f"⚠️ Konnte Modelle nicht automatisch abfragen: {e}")
-        
-    return "openai/gpt-oss-120b"
-
-MODEL_ID = get_best_available_model()
+# Wir nutzen hier fest das stabile Llama 3.3 Modell, das höhere Limits im Free Tier hat
+MODEL_ID = "llama-3.3-70b-versatile"
 
 class FileChange(BaseModel):
     relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/economy.py' oder 'TODO.md'")
@@ -52,7 +29,7 @@ class FileChange(BaseModel):
 
 class FeatureImplementation(BaseModel):
     explanation: str = Field(description="Kurze Erklärung der Implementierung.")
-    files: list[FileChange] = Field(description="Liste aller geänderten oder neu erstellten Dateien (inklusive TODO.md falls erweitert).")
+    files: list[FileChange] = Field(description="Liste aller geänderten oder neu erstellten Dateien.")
 
 def run_tests() -> tuple[bool, str]:
     try:
@@ -76,8 +53,8 @@ def rollback_workspace():
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Groq Auto-Discovery + Token-Optimierung)")
-    print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Fester Modell-Einsatz)")
+    print(f"📌 Genutztes Modell: {MODEL_ID}")
     print("==========================================================")
 
     if not TODO_FILE.exists():
@@ -101,13 +78,13 @@ def main():
 
     print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
-    # Codebase-Kontext stärker limitieren, um das 8000-Token-Limit nicht zu überschreiten
+    # Codebase-Kontext noch etwas kompakter halten, um Rate-Limits zu vermeiden
     codebase_context = ""
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
         content = path.read_text(encoding="utf-8")
-        if len(content) > 1500:  # Streichgrenze auf 1500 Zeichen gesenkt
-            content = content[:1500] + "\n# ... [gekürzt] ..."
+        if len(content) > 1000:  # Kürzung auf 1000 Zeichen
+            content = content[:1000] + "\n# ... [gekürzt] ..."
         codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{content}"
 
     prompt = f"""
@@ -127,7 +104,7 @@ ARCHITEKTUR-VORGABEN:
 1. Jedes neue System wird als eigenes Modul unter src/ angelegt (z.B. src/economy.py, src/combat.py).
 2. Alle Funktionen müssen deterministisch testbar sein.
 3. Du musst zu jedem neuen Modul direkt passende Unit-Tests unter tests/test_*.py schreiben!
-4. **ROADMAP-ERWEITERUNG:** Du darfst (und sollst) bei Bedarf auch die `TODO.md` in deiner JSON-Antwort mitliefern und dort neue `- [ ] ...` Aufgaben hinzufügen, falls für den sinnvollen Ausbau des Projekts weitere Features oder Module nötig sind.
+4. **ROADMAP-ERWEITERUNG:** Du darfst bei Bedarf auch die `TODO.md` in deiner JSON-Antwort mitliefern und dort neue `- [ ] ...` Aufgaben hinzufügen.
 
 Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
 {{
@@ -135,7 +112,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
   "files": [
     {{
       "relative_path": "TODO.md",
-      "content": "vollständiger inhalt der aktualisierten TODO.md (aktuelle Aufgabe als erledigt [x] markiert und ggf. neue Aufgaben hinzugefügt)"
+      "content": "vollständiger inhalt der aktualisierten TODO.md"
     }},
     {{
       "relative_path": "src/neues_modul.py",
@@ -153,8 +130,8 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
         
         try:
             if attempt > 1:
-                print("⏳ Warte 5 Sekunden...")
-                time.sleep(5)
+                print("⏳ Warte 10 Sekunden wegen Rate Limit...")
+                time.sleep(10) # Länger warten bei Rate-Limits
 
             response = client.chat.completions.create(
                 model=MODEL_ID,
@@ -190,7 +167,6 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
                 print("✅ Alle Tests erfolgreich bestanden!")
                 success = True
                 
-                # Automatischen Git-Commit für das neue Feature und die Roadmap ausführen
                 subprocess.run(["git", "config", "--global", "user.name", "AI Evolution Bot"])
                 subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"])
                 subprocess.run(["git", "add", "workspace/"])
@@ -201,14 +177,6 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
                 last_error = test_output
                 rollback_workspace()
 
-        except Exception as e:
-            print(f"⚠️ API-Fehler (Versuch {attempt}): {str(e)}")
-            last_error = str(e)
-            rollback_workspace()
-
-    if not success:
-        print(f"🛑 Feature konnte nach {MAX_RETRIES_PER_FEAT} Versuchen nicht stabil integriert werden.")
-        rollback_workspace()
-
+default_error_handling = True
 if __name__ == "__main__":
     main()
