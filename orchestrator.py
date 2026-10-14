@@ -78,7 +78,7 @@ def main():
 
     print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
-    # Codebase-Kontext noch etwas kompakter halten, um Rate-Limits zu vermeiden
+    # Codebase-Kontext kompakt halten, um Rate-Limits zu vermeiden
     codebase_context = ""
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
@@ -131,7 +131,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
         try:
             if attempt > 1:
                 print("⏳ Warte 10 Sekunden wegen Rate Limit...")
-                time.sleep(10) # Länger warten bei Rate-Limits
+                time.sleep(10)
 
             response = client.chat.completions.create(
                 model=MODEL_ID,
@@ -177,6 +177,14 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt mit folgender Struktur:
                 last_error = test_output
                 rollback_workspace()
 
-default_error_handling = True
+        except Exception as e:
+            print(f"⚠️ API-Fehler (Versuch {attempt}): {str(e)}")
+            last_error = str(e)
+            rollback_workspace()
+
+    if not success:
+        print(f"🛑 Feature konnte nach {MAX_RETRIES_PER_FEAT} Versuchen nicht stabil integriert werden.")
+        rollback_workspace()
+
 if __name__ == "__main__":
     main()
