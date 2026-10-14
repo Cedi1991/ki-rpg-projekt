@@ -10,28 +10,22 @@ from google.genai import types
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
 MODEL_ID = "gemini-flash-latest"
-MAX_ITERATIONS = 1                 # Pro stündlichem GitHub-Lauf genau 1 neues Feature
-MAX_RETRIES_PER_FEAT = 3           # Bis zu 3 Selbstkorrektur-Versuche bei roten Tests
-TEST_TIMEOUT_SECONDS = 15          # Schutz vor Endlosschleifen
-SLEEP_BETWEEN_LOOPS = 0            # Keine Pause nötig bei GitHub Actions
+MAX_ITERATIONS = 1                 
+MAX_RETRIES_PER_FEAT = 3           
+TEST_TIMEOUT_SECONDS = 15          
+SLEEP_BETWEEN_LOOPS = 0            
 
 client = genai.Client()
 
-# --- DATENMODELLE FÜR MULTI-FILE OUTPUT ---
 class FileChange(BaseModel):
-    relative_path: str = Field(
-        description="Relativer Pfad innerhalb von workspace/, z.B. 'src/economy.py' oder 'tests/test_economy.py'"
-    )
-    content: str = Field(
-        description="Der vollständige Python-Quellcode für diese Datei."
-    )
+    relative_path: str = Field(description="Relativer Pfad innerhalb von workspace/, z.B. 'src/economy.py'")
+    content: str = Field(description="Der vollständige Python-Quellcode für diese Datei.")
 
 class FeatureImplementation(BaseModel):
     explanation: str = Field(description="Kurze Erklärung der Implementierung.")
     files: list[FileChange] = Field(description="Liste aller geänderten oder neu erstellten Dateien.")
 
 def run_tests() -> tuple[bool, str]:
-    """Führt pytest im Workspace aus und gibt (Erfolg, Output) zurück."""
     try:
         result = subprocess.run(
             ["pytest", "workspace/tests/", "-v"],
@@ -40,17 +34,11 @@ def run_tests() -> tuple[bool, str]:
             timeout=TEST_TIMEOUT_SECONDS,
             env={**os.environ, "PYTHONPATH": str(WORKSPACE_DIR)}
         )
-        success = (result.returncode == 0)
-        output = result.stdout + "\n" + result.stderr
-        return success, output
+        return (result.returncode == 0), result.stdout + "\n" + result.stderr
     except subprocess.TimeoutExpired:
-        return False, "Fehler: Test-Timeout überschritten (Endlosschleife?)."
+        return False, "Fehler: Test-Timeout überschritten."
     except Exception as e:
         return False, f"Fehler beim Ausführen von pytest: {str(e)}"
-
-def get_git_status() -> str:
-    result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
-    return result.stdout
 
 def rollback_workspace():
     print("🔄 [ROLLBACK] Setze gesamten Workspace auf den letzten stabilen Git-Commit zurück...")
@@ -67,8 +55,6 @@ def main():
         return
 
     todo_content = TODO_FILE.read_text(encoding="utf-8")
-    
-    # Finde die erste offene Aufgabe [ ]
     lines = todo_content.splitlines()
     target_line_idx = -1
     target_task = None
@@ -80,12 +66,11 @@ def main():
             break
 
     if not target_task:
-        print("✨ Keine offenen Aufgaben mehr in der TODO.md! Das Projekt ist komplett.")
+        print("✨ Keine offenen Aufgaben mehr in der TODO.md!")
         return
 
     print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
-    # Bestehenden Code einlesen, damit die KI den Kontext kennt
     codebase_context = ""
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
@@ -120,6 +105,11 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
         print(f"🤖 KI plant & programmiert (Versuch {attempt}/{MAX_RETRIES_PER_FEAT})...")
         
         try:
+            # Kurze Pause bei Wiederholungen wegen Server-Last (Rate Limiting / 503 abfedern)
+            if attempt > 1:
+                print("⏳ Warte 5 Sekunden vor erneutem API-Aufruf...")
+                time.sleep(5)
+
             response = client.models.generate_content(
                 model=MODEL_ID,
                 contents=prompt + (f"\n\nLETZTER FEHLER BEIM TESTEN:\n{last_error}" if last_error else ""),
@@ -133,7 +123,6 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
             import json
             data = json.loads(response.text)
             
-            # Dateien schreiben
             for f_change in data.get("files", []):
                 rel_p = f_change["relative_path"]
                 full_p = WORKSPACE_DIR / rel_p
@@ -141,15 +130,12 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
                 full_p.write_text(f_change["content"], encoding="utf-8")
                 print(f"📝 Datei geschrieben: {rel_p}")
 
-            # Tests ausführen
             print("🧪 Führe Tests aus...")
             test_passed, test_output = run_tests()
             
             if test_passed:
                 print("✅ Alle Tests erfolgreich bestanden!")
                 success = True
-                
-                # TODO.md aktualisieren
                 lines[target_line_idx] = f"- [x] {target_task}"
                 TODO_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
                 break
@@ -159,7 +145,7 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
                 rollback_workspace()
 
         except Exception as e:
-            print(f"⚠️ Fehler bei Ausführung oder Sicherheits-Check: {str(e)}")
+            print(f"⚠️ Server/API-Fehler (Versuch {attempt}): {str(e)}")
             last_error = str(e)
             rollback_workspace()
 
