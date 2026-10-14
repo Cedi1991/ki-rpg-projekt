@@ -83,7 +83,7 @@ def main():
         print("✨ Keine offenen Aufgaben mehr in der TODO.md! Das Projekt ist komplett.")
         return
 
-    print(г🤖 Nächste Aufgabe für die KI: {target_task}г)
+    print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
     # Bestehenden Code einlesen, damit die KI den Kontext kennt
     codebase_context = ""
@@ -169,4 +169,3 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
 
 if __name__ == "__main__":
     main()
-    
