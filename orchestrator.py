@@ -9,7 +9,7 @@ from google.genai import types
 # --- KONFIGURATION FÜR GITHUB ACTIONS ---
 WORKSPACE_DIR = Path("workspace").resolve()
 TODO_FILE = WORKSPACE_DIR / "TODO.md"
-MODEL_ID = "gemini-1.5-pro"
+MODEL_ID = "gemini-1.5-flash"
 MAX_ITERATIONS = 1                 
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
@@ -105,10 +105,9 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
         print(f"🤖 KI plant & programmiert (Versuch {attempt}/{MAX_RETRIES_PER_FEAT})...")
         
         try:
-            # Kurze Pause bei Wiederholungen wegen Server-Last (Rate Limiting / 503 abfedern)
             if attempt > 1:
-                print("⏳ Warte 5 Sekunden vor erneutem API-Aufruf...")
-                time.sleep(5)
+                print("⏳ Warte 10 Sekunden vor erneutem Versuch...")
+                time.sleep(10)
 
             response = client.models.generate_content(
                 model=MODEL_ID,
@@ -145,7 +144,7 @@ Antworte ausschliesslich mit dem strukturierten JSON-Objekt über das definierte
                 rollback_workspace()
 
         except Exception as e:
-            print(f"⚠️ Server/API-Fehler (Versuch {attempt}): {str(e)}")
+            print(f"⚠️ API-Fehler (Versuch {attempt}): {str(e)}")
             last_error = str(e)
             rollback_workspace()
 
