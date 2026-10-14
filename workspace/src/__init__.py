@@ -1,1 +1,1 @@
-# init
+# Package initialization for RPG workspace
