@@ -1,0 +1,140 @@
+```python
+# src/npc_interaction.py
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Callable, List, Optional, Dict, Any
+
+
+# --------------------------------------------------------------------------- #
+# Helper Protocols (used only for type‑checking, no runtime impact)
+# --------------------------------------------------------------------------- #
+class _HasGold:
+    gold: int
+
+
+class _HasInventory:
+    inventory: List[Any]
+
+
+class Player(_HasGold, _HasInventory):
+    """A minimal Player protocol used by the NPC system.
+    The real Player implementation lives elsewhere; this class only
+    provides the attribute names expected by the dialog logic.
+    """
+    name: str
+
+
+class Item:
+    """A minimal Item protocol used by the dialog system.
+    The real Item implementation lives elsewhere; this class only
+    provides the attribute names expected by the dialog logic.
+    """
+    category: str
+
+
+# --------------------------------------------------------------------------- #
+# Dialog infrastructure
+# --------------------------------------------------------------------------- #
+Condition = Callable[[Player], bool]
+Action = Callable[[Player], str]
+
+
+@dataclass
+class DialogLine:
+    """A single line in a dialog tree."""
+    text: str
+    condition: Optional[Condition] = None
+    action: Optional[Action] = None
+    next_lines: List["DialogLine"] = field(default_factory=list)
+
+    def is_available(self, player: Player) -> bool:
+        """Return True if the line can be shown to *player*."""
+        return self.condition(player) if self.condition else True
+
+    def execute(self, player: Player) -> str:
+        """Run the optional action and return the resulting text."""
+        if self.action:
+            return self.action(player)
+        return self.text
+
+
+@dataclass
+class Dialog:
+    """A collection of dialog lines forming a conversation."""
+    entry: DialogLine
+
+    def run(self, player: Player) -> List[str]:
+        """Traverse the dialog tree according to conditions and return
+        the accumulated texts.
+        """
+        output: List[str] = []
+        current = self.entry
+
+        while current:
+            if not current.is_available(player):
+                # Find the first child that is available
+                current = next(
+                    (c for c in current.next_lines if c.is_available(player)),
+                    None,
+                )
+                continue
+
+            output.append(current.execute(player))
+
+            # Choose the next line: first child that satisfies its condition
+            next_line = None
+            for child in current.next_lines:
+                if child.is_available(player):
+                    next_line = child
+                    break
+            current = next_line
+
+        return output
+
+
+# --------------------------------------------------------------------------- #
+# NPC definition
+# --------------------------------------------------------------------------- #
+@dataclass
+class NPC:
+    """Non‑player character capable of context‑aware interaction."""
+    name: str
+    dialogs: Dict[str, Dialog] = field(default_factory=dict)
+
+    def add_dialog(self, key: str, dialog: Dialog) -> None:
+        """Register a dialog under *key* (e.g. 'trade', 'quest')."""
+        self.dialogs[key] = dialog
+
+    def choose_dialog(self, player: Player) -> Optional[Dialog]:
+        """Select the most appropriate dialog based on *player* state."""
+        # Simple priority order: trade → quest → idle
+        for key in ("trade", "quest", "idle"):
+            dlg = self.dialogs.get(key)
+            if dlg:
+                # If the entry line is available, we accept this dialog
+                if dlg.entry.is_available(player):
+                    return dlg
+        # Fallback: first available dialog
+        for dlg in self.dialogs.values():
+            if dlg.entry.is_available(player):
+                return dlg
+        return None
+
+    def interact(self, player: Player) -> List[str]:
+        """Perform an interaction and return the dialog texts."""
+        dialog = self.choose_dialog(player)
+        if not dialog:
+            return [f"{self.name} has nothing to say."]
+        return dialog.run(player)
+
+
+# --------------------------------------------------------------------------- #
+# Convenience factory for a generic merchant NPC
+# --------------------------------------------------------------------------- #
+def create_default_merchant(name: str = "Merchant") -> NPC:
+    """Create a merchant NPC with a tiny trade/quest dialog tree."""
+    # --- Trade dialog ------------------------------------------------------ #
+    trade_entry = DialogLine(
+        text="Greetings, traveler! Care to trade?",
+        condition=lambda p: getattr(p, "gold", 0) >= 10
