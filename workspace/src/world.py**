@@ -1,0 +1,155 @@
+# src/world.py
+"""3‑D‑Welt‑Logik für das modulare RPG.
+
+Dieses Modul definiert:
+* ``Position`` – ein unveränderliches 3‑D‑Koordinaten‑Objekt (x, y, z)
+* ``World`` – verwaltet die Position des Spielers und beliebige Entities
+  (z. B. ``Merchant`` oder ``Monster``) im Raum.
+* Hilfsfunktionen zur Distanzberechnung.
+
+Alle Klassen sind deterministisch und vollständig testbar – es wird keinerlei
+Zufall verwendet.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Dict, List, Tuple, Iterable, Any
+
+
+# --------------------------------------------------------------------------- #
+# Grundlegende Positionsdarstellung
+# --------------------------------------------------------------------------- #
+@dataclass(frozen=True, eq=True)
+class Position:
+    """Unveränderliche 3‑D‑Koordinate.
+
+    Die Klasse ist hashable (``frozen=True``) und kann deshalb als Schlüssel in
+    Dictionaries verwendet werden.
+    """
+    x: int
+    y: int
+    z: int
+
+    def __add__(self, other: Tuple[int, int, int] | "Position") -> "Position":
+        """Ermöglicht das Addieren von Tupeln oder anderen Positionen."""
+        if isinstance(other, Position):
+            return Position(self.x + other.x, self.y + other.y, self.z + other.z)
+        dx, dy, dz = other
+        return Position(self.x + dx, self.y + dy, self.z + dz)
+
+    def distance_to(self, other: "Position", metric: str = "euclidean") -> float:
+        """Berechnet die Distanz zu einer anderen Position.
+
+        Parameters
+        ----------
+        other: Position
+            Zielkoordinate.
+        metric: str, optional
+            ``'euclidean'`` (Standard) oder ``'manhattan'``.
+        """
+        dx = self.x - other.x
+        dy = self.y - other.y
+        dz = self.z - other.z
+        if metric == "manhattan":
+            return abs(dx) + abs(dy) + abs(dz)
+        # Euclidean
+        return (dx ** 2 + dy ** 2 + dz ** 2) ** 0.5
+
+
+# --------------------------------------------------------------------------- #
+# Welt‑Container
+# --------------------------------------------------------------------------- #
+class World:
+    """Container für alle Entities und die Spielerposition.
+
+    Die Welt kennt keine Spiel‑Logik (Kampf, Handel …); sie liefert lediglich
+    die räumliche Zuordnung. Andere Module können über ``encounter`` prüfen,
+    welche Entities sich am Spieler befinden.
+    """
+
+    def __init__(self) -> None:
+        # Mapping von Position → Liste von Entities (beliebige Objekte)
+        self._entities: Dict[Position, List[Any]] = {}
+        # Der Spieler startet immer in (0, 0, 0)
+        self.player_position: Position = Position(0, 0, 0)
+
+    # --------------------------------------------------------------------- #
+    # Entity‑Management
+    # --------------------------------------------------------------------- #
+    def place_entity(self, entity: Any, position: Position) -> None:
+        """Platziert ein Entity an einer festen Position.
+
+        Mehrere Entities können dieselbe Position teilen.
+        """
+        self._entities.setdefault(position, []).append(entity)
+
+    def remove_entity(self, entity: Any, position: Position) -> bool:
+        """Entfernt ein Entity von einer Position.
+
+        Returns
+        -------
+        bool
+            ``True`` wenn das Entity gefunden und entfernt wurde,
+            sonst ``False``.
+        """
+        bucket = self._entities.get(position)
+        if not bucket:
+            return False
+        try:
+            bucket.remove(entity)
+            if not bucket:               # Aufräumen, falls die Liste leer ist
+                del self._entities[position]
+            return True
+        except ValueError:
+            return False
+
+    def get_entities_at(self, position: Position) -> List[Any]:
+        """Liefert eine Kopie der Entity‑Liste an ``position``."""
+        return list(self._entities.get(position, []))
+
+    # --------------------------------------------------------------------- #
+    # Spieler‑Bewegung
+    # --------------------------------------------------------------------- #
+    def move_player(self, dx: int = 0, dy: int = 0, dz: int = 0) -> Position:
+        """Verschiebt den Spieler relativ zu seiner aktuellen Position.
+
+        Parameters
+        ----------
+        dx, dy, dz: int
+            Verschiebungswerte entlang der jeweiligen Achse.
+
+        Returns
+        -------
+        Position
+            Die neue Spielerposition.
+        """
+        self.player_position = self.player_position + (dx, dy, dz)
+        return self.player_position
+
+    def set_player_position(self, position: Position) -> None:
+        """Setzt die Spielerposition absolut (z. B. beim Laden eines Spielstands)."""
+        self.player_position = position
+
+    # --------------------------------------------------------------------- #
+    # Begegnungs‑Abfrage
+    # --------------------------------------------------------------------- #
+    def encounter(self) -> List[Any]:
+        """Gibt alle Entities zurück, die sich exakt an der Spielerposition
+        befinden.  Wird häufig verwendet, um zu prüfen, ob ein Händler,
+        Monster oder ein anderer Gegenstand getroffen wurde.
+        """
+        return self.get_entities_at(self.player_position)
+
+    # --------------------------------------------------------------------- #
+    # Hilfs‑Methoden (optional, für Tests)
+    # --------------------------------------------------------------------- #
+    def all_positions(self) -> Iterable[Position]:
+        """Iterator über alle belegten Positionen (ohne die Spielerposition)."""
+        return self._entities.keys()
+
+    def __repr__(self) -> str:
+        return (
+            f"World(player_position={self.player_position}, "
+            f"entity_count={sum(len(v) for v in self._entities.values())})"
+        )
