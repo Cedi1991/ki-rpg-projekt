@@ -12,30 +12,16 @@ TODO_FILE = WORKSPACE_DIR / "TODO.md"
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
 
+# OpenAI-Client mit explizitem Timeout, damit Verbindungen nicht hängen bleiben
 client = OpenAI(
     api_key=os.environ.get("GROQ_API_KEY"),
-    base_url="[https://api.groq.com/openai/v1](https://api.groq.com/openai/v1)"
+    base_url="https://api.groq.com/openai/v1",
+    timeout=30.0,
+    max_retries=2
 )
 
-def get_best_available_model() -> str:
-    try:
-        models = client.models.list()
-        available_ids = [m.id for m in models.data]
-        for m_id in available_ids:
-            m_lower = m_id.lower()
-            if "guard" not in m_lower and "whisper" not in m_lower:
-                if "llama-3" in m_lower or "llama3" in m_lower or "qwen" in m_lower:
-                    return m_id
-        for m_id in available_ids:
-            if "guard" not in m_id.lower() and "whisper" not in m_id.lower():
-                return m_id
-        if available_ids:
-            return available_ids[0]
-    except Exception as e:
-        print(f"⚠️ Konnte Modelle nicht automatisch abfragen: {e}")
-    return "llama3-70b-8192"
-
-MODEL_ID = get_best_available_model()
+# Fester Modell-Standard, um Fehler bei der automatischen Abfrage zu umgehen
+MODEL_ID = "llama3-70b-8192"
 
 def run_tests() -> tuple[bool, str]:
     try:
@@ -60,10 +46,8 @@ def rollback_workspace():
 def clean_code(raw_content: str) -> str:
     """Entfernt versehentlich mitgeschickte Markdown-Backticks aus dem Code."""
     content = raw_content.strip()
-    # Entferne führende ```python oder ```
-    content = re.sub(r"^```(?:python)?\s*\n", "", content, flags=IGNORECASE if 'IGNORECASE' in globals() else re.IGNORECASE)
+    content = re.sub(r"^```(?:python)?\s*\n", "", content, flags=re.IGNORECASE)
     content = re.sub(r"^```\s*\n", "", content)
-    # Entferne schließende ```
     content = re.sub(r"\n```\s*$", "", content)
     return content.strip()
 
@@ -95,7 +79,7 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Mit automatischer Code-Bereinigung)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Mit Verbindungs-Timeouts)")
     print(f"📌 Aktives Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -168,7 +152,6 @@ Schreibe valides Python in Codeblöcken. NIEMALS modul.py bearbeiten!
                 code_blocks = [raw_text.strip()]
 
             matches = []
-            # Bereinige den Hauptcode von eventuellen Rest-Backticks
             matches.append((target_file, clean_code(code_blocks[0])))
 
             test_file = f"tests/test_{Path(target_file).name}"
