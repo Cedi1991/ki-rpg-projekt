@@ -57,29 +57,11 @@ def rollback_workspace():
     subprocess.run(["git", "clean", "-fd", "workspace/"], capture_output=True)
 
 def clean_code(raw_content: str) -> str:
-    """Extrahiert sauberen Python-Code und entfernt jeglichen Markdown- oder Textmüll."""
-    # Versuche Codeblöcke zu finden
     code_blocks = re.findall(r"```(?:python)?\s*(.*?)```", raw_content, re.DOTALL)
     if code_blocks:
         content = code_blocks[0]
     else:
         content = raw_content
-
-    # Entferne Erklärungszeilen am Anfang (falls welche durchrutschen)
-    lines = content.splitlines()
-    clean_lines = []
-    started = False
-    for line in lines:
-        stripped = line.strip()
-        # Sobald Python-Schlüsselwörter oder Imports kommen, beginnt der echte Code
-        if stripped.startswith(("import ", "from ", "class ", "def ", "#", "@", "if ", "GLOB")):
-            started = True
-        if started:
-            clean_lines.append(line)
-
-    if clean_lines:
-        content = "\n".join(clean_lines)
-
     return content.strip()
 
 def append_creative_next_task(todo_path: Path):
@@ -107,7 +89,7 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Strenger Code-Extractor)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Volle Modul-Autonomie)")
     print(f"📌 Aktives Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -139,87 +121,16 @@ def main():
             if "src/" in clean_word:
                 target_file = clean_word
 
+    # Lese den aktuellen Inhalt der Ziel-Datei (z.B. core.py) ein, damit die KI sie anpassen kann
+    current_target_content = ""
+    target_path_full = WORKSPACE_DIR / target_file
+    if target_path_full.exists():
+        current_target_content = target_path_full.read_text(encoding="utf-8")
+
     prompt = f"""
-Du bist ein strikter Python-Programmierer. 
+Du bist ein erfahrener Python-Entwickler. 
 AUFGABE: {target_task}
 
-REGELN:
-1. Antworte AUSSCHLIESSLICH mit validem Python-Code in einem Markdown-Codeblock (```python ... ```).
-2. Kein erklärender Text vor oder nach dem Code!
-3. Definiere in `src/core.py` notwendige Klassen wie `Item` und `Player`, falls sie benötigt werden, damit bestehende Tests nicht fehlschlagen.
-4. NIEMALS modul.py bearbeiten!
-"""
-
-    success = False
-    last_error = ""
-
-    for attempt in range(1, MAX_RETRIES_PER_FEAT + 1):
-        print(f"🤖 KI plant & programmiert (Versuch {attempt}/{MAX_RETRIES_PER_FEAT})...")
-
-        try:
-            if attempt > 1:
-                print("⏳ Warte 20 Sekunden...")
-                time.sleep(20)
-
-            response = client.chat.completions.create(
-                model=MODEL_ID,
-                messages=[
-                    {"role": "system", "content": "Du gibst ausschliesslich reinen Python-Code ohne Fließtext zurück."},
-                    {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER:\n{last_error}" if last_error else "")}
-                ],
-                max_tokens=800,
-                temperature=0.1,
-            )
-
-            raw_text = response.choices[0].message.content
-            cleaned_code = clean_code(raw_text)
-
-            matches = [(target_file, cleaned_code)]
-
-            # Dummy-Test falls nötig
-            test_file = f"tests/test_{Path(target_file).name}"
-            dummy_test = f"import pytest\ndef test_sanity():\n    assert True"
-            matches.append((test_file, dummy_test))
-
-            for rel_path, file_content in matches:
-                rel_p = rel_path.strip()
-                if "modul.py" in rel_p.lower():
-                    continue
-                full_p = WORKSPACE_DIR / rel_p
-                full_p.parent.mkdir(parents=True, exist_ok=True)
-                full_p.write_text(file_content, encoding="utf-8")
-                print(f"📝 Datei geschrieben: {rel_p}")
-
-            lines[target_line_idx] = f"- [x] {target_task}"
-            TODO_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-            print("🧪 Führe Tests aus...")
-            test_passed, test_output = run_tests()
-
-            if test_passed:
-                print("✅ Alle Tests erfolgreich bestanden!")
-                success = True
-
-                append_creative_next_task(TODO_FILE)
-
-                subprocess.run(["git", "config", "--global", "user.name", "AI Evolution Bot"])
-                subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"])
-                subprocess.run(["git", "add", "workspace/"])
-                subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}'"])
-                break
-            else:
-                print(f"❌ Tests fehlgeschlagen:\n{test_output}")
-                last_error = test_output
-                rollback_workspace()
-
-        except Exception as e:
-            print(f"⚠️ API-Fehler (Versuch {attempt}): {str(e)}")
-            last_error = str(e)
-            rollback_workspace()
-
-    if not success:
-        print(f"🛑 Feature konnte nach {MAX_RETRIES_PER_FEAT} Versuchen nicht stabil integriert werden.")
-        rollback_workspace()
-
-if __name__ == "__main__":
-    main()
+AKTUELLER INHALT DER DATEI ({target_file}):
+```python
+{current_target_content}
