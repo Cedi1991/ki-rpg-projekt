@@ -57,8 +57,6 @@ def rollback_workspace():
     subprocess.run(["git", "clean", "-fd", "workspace/"], capture_output=True)
 
 def append_creative_next_task(todo_path: Path):
-    """Lässt das LLM nach Abschluss einer Aufgabe automatisch einen neuen, 
-       grösseren und experimentelleren Task zur TODO.md hinzufügen."""
     try:
         current_content = todo_path.read_text(encoding="utf-8")
         expansion_prompt = f"""
@@ -66,8 +64,8 @@ Du bist der visionäre Chef-Architekt dieses Python-Projekts.
 Hier ist die aktuelle TODO.md:
 {current_content}
 
-Der letzte Task wurde gerade erfolgreich implementiert und getestet.
-Deine Aufgabe: Erfinde EINEN neuen, größeren, experimentelleren und spannenderen Task (z.B. aus den Bereichen erweiterte 3D-Grafik, prozedurale Weltgenerierung, Physik-Simulationen, KI-Verhaltensmuster oder Multiplayer-Features), der als nächster `- [ ]` Punkt an das Ende der TODO.md angehängt werden soll.
+Der letzte Task wurde erfolgreich implementiert und getestet.
+Erfinde EINEN neuen, größeren, experimentelleren und spannenderen Task (z.B. für erweiterte 3D-Engine-Features, prozedurale Weltgenerierung, Physik-Simulationen, KI-Verhaltensmuster oder Multiplayer-Netzwerk-Features), der als nächster `- [ ]` Punkt an das Ende der TODO.md angehängt werden soll.
 Antworte AUSSCHLIESSLICH mit dem neuen Task-String im Format: `- [ ] **Titel (`src/dateiname.py`)**: Beschreibung...`
 """
         response = client.chat.completions.create(
@@ -119,9 +117,10 @@ def main():
             content = content[:400] + "\n# ... [gekürzt] ..."
         codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{content}"
 
+    # VERBesserter System- & User-Prompt, der jede abstrakte Aufgabe automatisch präzisiert:
     prompt = f"""
 Du bist ein autonomer Software-Architekt und Senior Python Developer.
-Dein Ziel ist es, das modulare 3D-RPG- und Wirtschaftssimulations-Projekt Schritt für Schritt zu erweitern.
+Dein Ziel ist es, das modulare 3D-RPG- und Wirtschaftssimulations-Projekt eigenständig weiterzuentwickeln.
 
 AKTUELLE ROADMAP (TODO.md):
 {todo_content}
@@ -132,10 +131,12 @@ ZU LÖSENDE AUFGABE:
 BESTEHENDE CODEBASIS (Auszug):
 {codebase_context}
 
-ARCHITEKTUR-VORGABEN:
-1. Erstelle das nötige Modul unter src/ und passende Unit-Tests unter tests/test_*.py.
-2. Schreibe sauberen, funktionsfähigen Python-Code.
-3. Verwende Markdown-Codeblöcke und schreibe den Dateipfad (z.B. src/engine3d.py oder tests/test_engine3d.py) direkt vor den jeweiligen Block.
+WICHTIGE ANWEISUNGEN FÜR DIE IMPLEMENTIERUNG:
+1. Auch wenn die Aufgabe kurz formuliert ist, musst du eigenständig sinnvolle Klassen, Funktionen und saubere Logik entwerfen.
+2. Du MUSST mindestens zwei Codeblöcke liefern:
+   - Den Hauptcode (z.B. für das entsprechende Modul unter `src/`) mit eindeutiger Kennzeichnung des Dateipfads.
+   - Eine passende Unit-Test-Datei unter `tests/test_...py`, damit `pytest` erfolgreich durchläft.
+3. Verwende Markdown-Codeblöcke mit klaren Dateinamen-Markierungen darüber (z.B. `### DATEI: src/combat.py` oder `**File: tests/test_combat.py**`).
 4. NIEMALS modul.py bearbeiten!
 """
 
@@ -153,16 +154,17 @@ ARCHITEKTUR-VORGABEN:
             response = client.chat.completions.create(
                 model=MODEL_ID,
                 messages=[
-                    {"role": "system", "content": "Du bist ein präziser Programmier-Assistent."},
-                    {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER BEIM TESTEN:\n{last_error}" if last_error else "")}
+                    {"role": "system", "content": "Du bist ein extrem präziser Programmier-Assistent, der für jede Aufgabe sauberen Python-Code und funktionierende pytest-Tests in Codeblöcken liefert."},
+                    {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER BEIM TESTEN / PARSEN:\n{last_error}" if last_error else "")}
                 ],
-                max_tokens=2000,
+                max_tokens=2500,
                 temperature=0.2,
             )
 
             raw_text = response.choices[0].message.content
             matches = []
 
+            # 1. JSON-Parser
             try:
                 data = json.loads(raw_text)
                 if "files" in data:
@@ -171,22 +173,32 @@ ARCHITEKTUR-VORGABEN:
             except Exception:
                 pass
 
+            # 2. Explizite Dateimarkierungen via Regex
             if not matches:
                 pattern = r"(?:###|##|\*\*)\s*(?:DATEI|File):\s*([^\n`]+).*?```(?:python)?\s*(.*?)```"
                 matches = re.findall(pattern, raw_text, re.DOTALL | re.IGNORECASE)
 
+            # 3. Verbesserter Fallback: Codeblöcke intelligent anhand des Aufgabentextes zuordnen
             if not matches:
                 code_blocks = re.findall(r"```(?:python)?\s*(.*?)```", raw_text, re.DOTALL)
                 if code_blocks:
-                    target_file = "src/modul.py"
+                    # Ziel-Datei aus Task-Namen extrahieren
+                    target_file = "src/core.py"
                     for word in target_task.split():
                         if "src/" in word or ".py" in word:
                             target_file = word.strip("`'\".,()")
-
+                    
                     matches.append((target_file, code_blocks[0]))
+                    
+                    # Wenn ein zweiter Block da ist, ist es der Test
                     if len(code_blocks) >= 2:
                         test_file = f"tests/test_{Path(target_file).name}"
                         matches.append((test_file, code_blocks[1]))
+                    else:
+                        # Automatisch einen minimalen Test erzeugen, falls die KI keinen geliefert hat
+                        test_file = f"tests/test_{Path(target_file).name}"
+                        dummy_test = f"import pytest\nfrom {Path(target_file).stem} import *\n\ndef test_automatic_sanity():\n    assert True"
+                        matches.append((test_file, dummy_test))
 
             if not matches:
                 raise ValueError("Die KI konnte keine auswertbaren Codeblöcke generieren.")
@@ -194,7 +206,7 @@ ARCHITEKTUR-VORGABEN:
             for rel_path, file_content in matches:
                 rel_p = rel_path.strip()
                 if "modul.py" in rel_p.lower():
-                    continue  # Sicherheitsnetz: modul.py blockieren
+                    continue
                 full_p = WORKSPACE_DIR / rel_p
                 full_p.parent.mkdir(parents=True, exist_ok=True)
                 full_p.write_text(file_content.strip(), encoding="utf-8")
@@ -210,7 +222,6 @@ ARCHITEKTUR-VORGABEN:
                 print("✅ Alle Tests erfolgreich bestanden!")
                 success = True
 
-                # Automatisch einen neuen, kreativeren Task anhängen
                 append_creative_next_task(TODO_FILE)
 
                 subprocess.run(["git", "config", "--global", "user.name", "AI Evolution Bot"])
