@@ -1,149 +1,36 @@
-"""src/multiplayer.py
-Minimaler, deterministischer Mehrspieler‑Modus für das RPG‑Projekt.
+markdown
+# Projekt-Roadmap: Modulare RPG- & Wirtschaftssimulation
 
-Dieses Modul enthält:
-* `MessageProtocol` – Serialisierung/Deserialisierung von JSON‑Nachrichten.
-* `Lobby` – Verwaltung einer Spiel‑Lobby (Hinzufügen/Entfernen von Spielern).
-* `ChatSession` – Einfaches Chat‑System innerhalb einer Lobby.
-"""
+## Architektur-Vorgaben für die KI
+- Jedes neue System wird als eigenes Modul unter `src/` angelegt (z.B. `src/economy.py`, `src/combat.py`).
+- Alle Funktionen müssen deterministisch testbar sein (bei Zufallslogik immer einen optionalen `seed` oder feste Parameter erlauben).
+- Bestehende Klassen in `src/core.py` dürfen um neue Attribute/Methoden erweitert werden, solange alle alten Tests in `tests/test_core.py` grün bleiben.
 
-from __future__ import annotations
+## Geplant (Offen)
 
-import json
-from dataclasses import dataclass, field
-from typing import List, Dict, Any
-
-# Die Kern‑Klassen des Spiels (Player, Item, …) liegen in src.core.
-# Wir importieren nur das, was wir benötigen, um Zyklen zu vermeiden.
-from src.core import Player
-
-
-# --------------------------------------------------------------------------- #
-# MessageProtocol
-# --------------------------------------------------------------------------- #
-class MessageProtocol:
-    """Kodiert und dekodiert Nachrichten als JSON‑Strings (eine Zeile pro Nachricht).
-
-    Die Implementierung ist vollständig deterministisch und damit leicht
-    testbar.  Ein Zeilen‑Break wird beim Kodieren angehängt, damit ein
-    Netzwerk‑Stream einfach zeilenweise gelesen werden kann.
-    """
-
-    def encode(self, data: Dict[str, Any]) -> str:
-        """Serialisiert ``data`` nach JSON und hängt einen Zeilen‑Break an.
-
-        Parameters
-        ----------
-        data: dict
-            Das zu übertragende Payload.
-
-        Returns
-        -------
-        str
-            JSON‑String + ``"\\n"``.
-        """
-        return json.dumps(data) + "\n"
-
-    def decode(self, data_str: str) -> Dict[str, Any]:
-        """Deserialisiert einen zuvor mit :meth:`encode` erzeugten String.
-
-        Whitespace (z. B. das abschließende ``\\n``) wird entfernt, bevor
-        ``json.loads`` aufgerufen.
-
-        Parameters
-        ----------
-        data_str: str
-            Der empfangene JSON‑String.
-
-        Returns
-        -------
-        dict
-            Das ursprüngliche Payload.
-        """
-        return json.loads(data_str.strip())
-
-
-# --------------------------------------------------------------------------- #
-# Lobby
-# --------------------------------------------------------------------------- #
-@dataclass
-class Lobby:
-    """Verwaltet eine Gruppe von Spielern.
-
-    Attributes
-    ----------
-    name: str
-        Anzeigename der Lobby.
-    players: List[Player]
-        Aktuell verbundene Spieler.  Intern als Liste, weil die Reihenfolge
-        für die Tests nicht relevant ist, aber ein ``list`` lässt sich leicht
-        serialisieren, falls das später nötig wird.
-    """
-
-    name: str
-    players: List[Player] = field(default_factory=list)
-
-    # ------------------------------------------------------------------- #
-    # Spieler‑Management
-    # ------------------------------------------------------------------- #
-    def add_player(self, player: Player) -> None:
-        """Fügt ``player`` zur Lobby hinzu, falls er noch nicht enthalten ist."""
-        if player not in self.players:
-            self.players.append(player)
-
-    def remove_player(self, player: Player) -> None:
-        """Entfernt ``player`` aus der Lobby, falls er vorhanden ist."""
-        if player in self.players:
-            self.players.remove(player)
-
-    # ------------------------------------------------------------------- #
-    # Hilfsfunktion – Broadcast (wird von den Tests nicht direkt genutzt,
-    #                     ist aber nützlich für ein späteres Netzwerk‑Design)
-    # ------------------------------------------------------------------- #
-    def broadcast(self, message: Dict[str, Any], protocol: MessageProtocol) -> List[str]:
-        """Serialisiert ``message`` und gibt die kodierten Strings für alle Spieler zurück."""
-        encoded = protocol.encode(message)
-        return [encoded for _ in self.players]
-
-
-# --------------------------------------------------------------------------- #
-# ChatSession
-# --------------------------------------------------------------------------- #
-class ChatSession:
-    """Ein einfacher Chat‑Dienst innerhalb einer Lobby.
-
-    Der Chat speichert jede gesendete Nachricht in ``self.history``.
-    Jede Nachricht ist ein Dictionary mit den Schlüsseln ``type``, ``sender``
-    und ``message`` – exakt das Format, das :class:`MessageProtocol` erwartet.
-    """
-
-    def __init__(self, lobby: Lobby):
-        self.lobby: Lobby = lobby
-        self.history: List[Dict[str, Any]] = []
-
-    def send_message(self, sender: Player, content: str) -> Dict[str, Any]:
-        """Erzeugt eine Chat‑Nachricht und fügt sie dem Verlauf hinzu.
-
-        Parameters
-        ----------
-        sender: Player
-            Der Spieler, der die Nachricht sendet.
-        content: str
-            Der eigentliche Text.
-
-        Returns
-        -------
-        dict
-            Das erzeugte Nachrichten‑Objekt.
-        """
-        msg = {"type": "chat", "sender": sender.name, "message": content}
-        self.history.append(msg)
-        return msg
-
-    def get_history(self) -> List[Dict[str, Any]]:
-        """Gibt eine Kopie des bisherigen Chat‑Verlaufs zurück."""
-        return list(self.history)
-
-
-# Export für ``from src.multiplayer import *``
-__all__ = ["MessageProtocol", "Lobby", "ChatSession"]
+- [ ] Erstelle nach jedem todo ein logisch neues todo
+- [ ] Erstelle das Spiel in 3d und erweitere es durchweg
+- [x] Erstelle eine interaktive main.py als spielbares Text-Menü für das RPG und die Wirtschaftssimulation
+- [ ] Erstelle ein Menü für den Handel im `main.py`
+- [x] **Markt & Handel (`src/economy.py`)**: Implementiere eine Klasse `Merchant` mit einem eigenen Inventar und Goldbestand sowie den Methoden `buy_from_player(player, item_name)` und `sell_to_player(player, item_name)` inklusive dynamischer Preisfaktoren.
+- [ ] Implementiere dynamische Preisregulierung basierend auf Angebot und Nachfrage
+- [x] **Kampfsystem (`src/combat.py`)**: Implementiere eine `Monster`‑Datenklasse (Name, HP, Angriff, Gold‑Drop) und eine Funktion `resolve_combat_round(player, monster)`, die Schaden berechnet, Tod prüft und bei Sieg automatisch Gold an den Spieler vergibt.
+- [ ] Implementiere Spezialangriffe und Statusveränderungen (z.B. Betäubung, Verbrennung)
+- [x] **Crafting & Werkstätten (`src/crafting.py`)**: Implementiere ein Rezept‑System (`Recipe`), mit dem ein Spieler mehrere Rohstoffe aus seinem Inventar zu einem höherwertigen Item kombinieren kann (`craft_item(player, recipe)`).
+- [ ] Implementiere Werkstatt‑Upgrades, die die Effizienz von Rezepten erhöhen
+- [x] **Verbrauchsgüter & Buffs (`src/consumables.py`)**: Ermögliche das Benutzen von Heiltränken oder Nahrung aus dem Inventar (`use_item(player, item_name)`), um `hp` bis maximal `max_hp` wiederherzustellen.
+- [ ] Implementiere Buff‑Stacking und Dauer‑Effekte (z.B. Schild, Geschwindigkeit)
+- [x] **Speichern & Laden (`src/persistence.py`)**: Implementiere `save_player_to_json(player) -> str` und `load_player_from_json(json_str) -> Player`, um den kompletten Spielstand (inkl. Inventar) zu serialisieren.
+- [ ] Implementiere Auto‑Save und Load‑Checkpoint-Mechanismen
+- [x] **Mehrspieler‑Modus (`src/multiplayer.py`)**: Netzwerk‑Synchronisation, Server‑Client‑Architektur und Spieler‑Interaktion.
+- [ ] Implementiere Synchronisation von Inventar und Quest‑Status zwischen Server und Clients
+- [x] **Quests & Storyline (`src/quests.py`)**: Quest‑Logik, Belohnungen und Fortschritts‑Tracking.
+- [ ] Implementiere Quest‑Dialog und NPC‑Interaktion im Quest‑System
+- [x] **Grafische Benutzeroberfläche (`src/gui.py`)**: Grundlegendes UI mit `tkinter` für Inventar‑Anzeige und Interaktionen.
+- [ ] Implementiere Drag‑&‑Drop‑Funktionalität für das Inventar im GUI
+- [x] **Implementierung eines einfachen Dialogsystems (`src/dialogue.py`)**
+- [ ] Implementiere NPC‑Dialog‑Bäume mit dynamischen Optionen basierend auf Quest‑Status
+- [x] Erweiterung des Mehrspieler‑Modus um Lobby‑ und Chat‑Funktionen.
+- [ ] Implementiere Voice‑Chat oder Sprach‑zu‑Text‑Integration für die Lobby
+- [x] Persistenz für Quest‑Fortschritt in `src/persistence.py`.
+- [ ] Implementiere ein Quest‑Log‑UI, das den Fortschritt aller aktiven Quests anzeigt
