@@ -12,14 +12,13 @@ TODO_FILE = WORKSPACE_DIR / "TODO.md"
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
 
-# Korrigierte Basis-URL ohne Markdown-Müll
 client = OpenAI(
     api_key=os.environ.get("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1"
 )
 
-# Festes Modell, um Netzwerkfehler beim automatischen Abfragen zu verhindern
-MODEL_ID = "llama-3.3-70b-versatile"
+# Verwende ein stabiles, standardmäßig verfügbares Groq-Modell
+MODEL_ID = "llama-3.1-70b-versatile"
 
 def run_tests() -> tuple[bool, str]:
     try:
@@ -69,7 +68,7 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (URL korrigiert)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Modell korrigiert)")
     print(f"📌 Verwendetes Modell: {MODEL_ID}")
     print("==========================================================")
 
