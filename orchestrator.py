@@ -67,12 +67,9 @@ def append_creative_next_task(todo_path: Path):
     try:
         current_content = todo_path.read_text(encoding="utf-8")
         expansion_prompt = f"""
-Du bist der Chef-Architekt dieses Python-Projekts.
 Hier ist die aktuelle TODO.md:
 {current_content}
-
-Der letzte Task wurde erfolgreich implementiert und getestet.
-Erfinde EINEN neuen, größeren und spannenderen Task für das 3D-RPG, der als nächster `- [ ]` Punkt an das Ende der TODO.md angehängt werden soll.
+Der letzte Task war erfolgreich. Erfinde EINEN neuen, größeren Task für das 3D-RPG als nächsten `- [ ]` Punkt.
 Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Beschreibung...`
 """
         response = client.chat.completions.create(
@@ -85,13 +82,13 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
         if new_task.startswith("- [ ]"):
             updated_content = current_content.strip() + "\n" + new_task + "\n"
             todo_path.write_text(updated_content, encoding="utf-8")
-            print(f"✨ Neuer autonomer Task hinzugefügt: {new_task}")
+            print(f"✨ Neuer Task hinzugefügt: {new_task}")
     except Exception as e:
         print(f"⚠️ Konnte keinen neuen Task automatisch generieren: {e}")
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Robuste Modul-Kompatibilität)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Token-optimiert)")
     print(f"📌 Aktives Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -123,22 +120,25 @@ def main():
             if "src/" in clean_word:
                 target_file = clean_word
 
+    # Stark minimierter Kontext, um das 8000 Token TPM-Limit nicht zu sprengen
     codebase_context = ""
-    for path in WORKSPACE_DIR.rglob("*.py"):
-        rel_path = path.relative_to(WORKSPACE_DIR)
-        content = path.read_text(encoding="utf-8")
-        codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{content}"
+    core_file = WORKSPACE_DIR / "src" / "core.py"
+    if core_file.exists():
+        content = core_file.read_text(encoding="utf-8")
+        if len(content) > 800:
+            content = content[:800] + "\n# ... [gekürzt] ..."
+        codebase_context = f"\n\n--- DATEI: src/core.py ---\n{content}"
 
     prompt = f"""
-Du bist ein Senior Python Developer. Du arbeitest an einem modularen RPG-Projekt.
-Hier ist die gesamte bestehende Codebasis:
+Du bist ein Senior Python Developer. Implementiere folgende Aufgabe für das 3D-RPG:
+{target_task}
+
+Bestehender Kontext (src/core.py):
 {codebase_context}
 
-AUFGABE: {target_task}
-
 WICHTIGE REGELN:
-1. Behalte bestehende Klassen und Funktionen (wie `Item`, `Player` etc.) in `src/core.py` unbedingt bei und erweitere sie nur, damit bestehende Tests nicht brechen!
-2. Schreibe sauberen, vollständigen Python-Code in Codeblöcken.
+1. Behalte bestehende Klassen und Funktionen in `src/core.py` bei (wie `Item`, `Player` etc.).
+2. Liefere sauberen Python-Code in Codeblöcken.
 3. NIEMALS modul.py bearbeiten!
 """
 
@@ -159,7 +159,7 @@ WICHTIGE REGELN:
                     {"role": "system", "content": "Du bist ein präziser Programmier-Assistent."},
                     {"role": "user", "content": prompt + (f"\n\nLETZTER TEST-FEHLER:\n{last_error}" if last_error else "")}
                 ],
-                max_tokens=800,
+                max_tokens=600,
                 temperature=0.2,
             )
 
