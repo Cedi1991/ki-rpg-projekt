@@ -8,7 +8,7 @@
 ## Geplant (Offen)
 
 - [x] Erstelle nach jedem todo ein logisch neues todo
-- [ ] Erstelle das Spiel in 3d und erweitere es durchweg
+- [x] Erstelle das Spiel in 3d und erweitere es durchweg
 - [x] Erstelle eine interaktive main.py als spielbares Text-Menü für das RPG und die Wirtschaftssimulation
 - [x] **Markt & Handel (`src/economy.py`)**: Implementiere eine Klasse `Merchant` mit einem eigenen Inventar und Goldbestand sowie den Methoden `buy_from_player(player, item_name)` und `sell_to_player(player, item_name)` inklusive dynamischer Preisfaktoren.
 - [x] **Kampfsystem (`src/combat.py`)**: Implementiere eine `Monster`‑Datenklasse (Name, HP, Angriff, Gold‑Drop) und eine Funktion `resolve_combat_round(player, monster)`, die Schaden berechnet, Tod prüft und bei Sieg automatisch Gold an den Spieler vergibt.
