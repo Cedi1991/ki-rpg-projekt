@@ -14,35 +14,25 @@ TEST_TIMEOUT_SECONDS = 15
 
 client = OpenAI(
     api_key=os.environ.get("GROQ_API_KEY"),
-    base_url="https://api.groq.com/openai/v1"
+    base_url="[https://api.groq.com/openai/v1](https://api.groq.com/openai/v1)"
 )
 
 def get_best_available_model() -> str:
-    """Sucht sich vollautomatisch das aktuell funktionierende Modell über die API heraus."""
     try:
         models = client.models.list()
         available_ids = [m.id for m in models.data]
-        
-        # 1. Priorität: Suche nach stabilen Llama 3 / 3.3 oder Qwen Modellen
         for m_id in available_ids:
             m_lower = m_id.lower()
             if "guard" not in m_lower and "whisper" not in m_lower:
                 if "llama-3" in m_lower or "llama3" in m_lower or "qwen" in m_lower:
-                    print(f"🎯 Automatisch gewähltes Modell: {m_id}")
                     return m_id
-                    
-        # 2. Fallback: Nimm das erste verfügbare Nicht-Guard/Whisper-Modell
         for m_id in available_ids:
             if "guard" not in m_id.lower() and "whisper" not in m_id.lower():
-                print(f"🎯 Fallback-Modell gewählt: {m_id}")
                 return m_id
-                
         if available_ids:
             return available_ids[0]
     except Exception as e:
-        print(f"⚠️ Konnte Modelle nicht automatisch abfragen ({e}), nutze Standard-Fallback.")
-        
-    # Ultativer Hardcoded Fallback, falls die API-Abfrage fehlschlägt
+        print(f"⚠️ Konnte Modelle nicht automatisch abfragen: {e}")
     return "llama3-70b-8192"
 
 MODEL_ID = get_best_available_model()
@@ -66,6 +56,16 @@ def rollback_workspace():
     print("🔄 [ROLLBACK] Setze gesamten Workspace auf den letzten stabilen Git-Commit zurück...")
     subprocess.run(["git", "checkout", "workspace/"], capture_output=True)
     subprocess.run(["git", "clean", "-fd", "workspace/"], capture_output=True)
+
+def clean_code(raw_content: str) -> str:
+    """Entfernt versehentlich mitgeschickte Markdown-Backticks aus dem Code."""
+    content = raw_content.strip()
+    # Entferne führende ```python oder ```
+    content = re.sub(r"^```(?:python)?\s*\n", "", content, flags=IGNORECASE if 'IGNORECASE' in globals() else re.IGNORECASE)
+    content = re.sub(r"^```\s*\n", "", content)
+    # Entferne schließende ```
+    content = re.sub(r"\n```\s*$", "", content)
+    return content.strip()
 
 def append_creative_next_task(todo_path: Path):
     try:
@@ -95,7 +95,7 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Autonome Modus-Suche aktiv)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Mit automatischer Code-Bereinigung)")
     print(f"📌 Aktives Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -137,7 +137,7 @@ def main():
 
     prompt = f"""
 Schreibe reinen Python-Code für diese Aufgabe: {target_task}
-Schreibe valides Python. NIEMALS modul.py bearbeiten!
+Schreibe valides Python in Codeblöcken. NIEMALS modul.py bearbeiten!
 """
 
     success = False
@@ -168,11 +168,12 @@ Schreibe valides Python. NIEMALS modul.py bearbeiten!
                 code_blocks = [raw_text.strip()]
 
             matches = []
-            matches.append((target_file, code_blocks[0]))
+            # Bereinige den Hauptcode von eventuellen Rest-Backticks
+            matches.append((target_file, clean_code(code_blocks[0])))
 
             test_file = f"tests/test_{Path(target_file).name}"
             if len(code_blocks) >= 2:
-                matches.append((test_file, code_blocks[1]))
+                matches.append((test_file, clean_code(code_blocks[1])))
             else:
                 module_stem = Path(target_file).stem
                 dummy_test = f"import pytest\nfrom {module_stem} import *\n\ndef test_automatic_sanity():\n    assert True"
@@ -184,7 +185,7 @@ Schreibe valides Python. NIEMALS modul.py bearbeiten!
                     continue
                 full_p = WORKSPACE_DIR / rel_p
                 full_p.parent.mkdir(parents=True, exist_ok=True)
-                full_p.write_text(file_content.strip(), encoding="utf-8")
+                full_p.write_text(file_content, encoding="utf-8")
                 print(f"📝 Datei geschrieben: {rel_p}")
 
             lines[target_line_idx] = f"- [x] {target_task}"
