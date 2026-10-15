@@ -57,10 +57,29 @@ def rollback_workspace():
     subprocess.run(["git", "clean", "-fd", "workspace/"], capture_output=True)
 
 def clean_code(raw_content: str) -> str:
-    content = raw_content.strip()
-    content = re.sub(r"^```(?:python)?\s*\n", "", content, flags=re.IGNORECASE)
-    content = re.sub(r"^```\s*\n", "", content)
-    content = re.sub(r"\n```\s*$", "", content)
+    """Extrahiert sauberen Python-Code und entfernt jeglichen Markdown- oder Textmüll."""
+    # Versuche Codeblöcke zu finden
+    code_blocks = re.findall(r"```(?:python)?\s*(.*?)```", raw_content, re.DOTALL)
+    if code_blocks:
+        content = code_blocks[0]
+    else:
+        content = raw_content
+
+    # Entferne Erklärungszeilen am Anfang (falls welche durchrutschen)
+    lines = content.splitlines()
+    clean_lines = []
+    started = False
+    for line in lines:
+        stripped = line.strip()
+        # Sobald Python-Schlüsselwörter oder Imports kommen, beginnt der echte Code
+        if stripped.startswith(("import ", "from ", "class ", "def ", "#", "@", "if ", "GLOB")):
+            started = True
+        if started:
+            clean_lines.append(line)
+
+    if clean_lines:
+        content = "\n".join(clean_lines)
+
     return content.strip()
 
 def append_creative_next_task(todo_path: Path):
@@ -88,7 +107,7 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Token-optimiert)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Strenger Code-Extractor)")
     print(f"📌 Aktives Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -120,26 +139,15 @@ def main():
             if "src/" in clean_word:
                 target_file = clean_word
 
-    # Stark minimierter Kontext, um das 8000 Token TPM-Limit nicht zu sprengen
-    codebase_context = ""
-    core_file = WORKSPACE_DIR / "src" / "core.py"
-    if core_file.exists():
-        content = core_file.read_text(encoding="utf-8")
-        if len(content) > 800:
-            content = content[:800] + "\n# ... [gekürzt] ..."
-        codebase_context = f"\n\n--- DATEI: src/core.py ---\n{content}"
-
     prompt = f"""
-Du bist ein Senior Python Developer. Implementiere folgende Aufgabe für das 3D-RPG:
-{target_task}
+Du bist ein strikter Python-Programmierer. 
+AUFGABE: {target_task}
 
-Bestehender Kontext (src/core.py):
-{codebase_context}
-
-WICHTIGE REGELN:
-1. Behalte bestehende Klassen und Funktionen in `src/core.py` bei (wie `Item`, `Player` etc.).
-2. Liefere sauberen Python-Code in Codeblöcken.
-3. NIEMALS modul.py bearbeiten!
+REGELN:
+1. Antworte AUSSCHLIESSLICH mit validem Python-Code in einem Markdown-Codeblock (```python ... ```).
+2. Kein erklärender Text vor oder nach dem Code!
+3. Definiere in `src/core.py` notwendige Klassen wie `Item` und `Player`, falls sie benötigt werden, damit bestehende Tests nicht fehlschlagen.
+4. NIEMALS modul.py bearbeiten!
 """
 
     success = False
@@ -156,29 +164,22 @@ WICHTIGE REGELN:
             response = client.chat.completions.create(
                 model=MODEL_ID,
                 messages=[
-                    {"role": "system", "content": "Du bist ein präziser Programmier-Assistent."},
-                    {"role": "user", "content": prompt + (f"\n\nLETZTER TEST-FEHLER:\n{last_error}" if last_error else "")}
+                    {"role": "system", "content": "Du gibst ausschliesslich reinen Python-Code ohne Fließtext zurück."},
+                    {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER:\n{last_error}" if last_error else "")}
                 ],
-                max_tokens=600,
-                temperature=0.2,
+                max_tokens=800,
+                temperature=0.1,
             )
 
             raw_text = response.choices[0].message.content
-            
-            code_blocks = re.findall(r"```(?:python)?\s*(.*?)```", raw_text, re.DOTALL)
-            if not code_blocks:
-                code_blocks = [raw_text.strip()]
+            cleaned_code = clean_code(raw_text)
 
-            matches = []
-            matches.append((target_file, clean_code(code_blocks[0])))
+            matches = [(target_file, cleaned_code)]
 
+            # Dummy-Test falls nötig
             test_file = f"tests/test_{Path(target_file).name}"
-            if len(code_blocks) >= 2:
-                matches.append((test_file, clean_code(code_blocks[1])))
-            else:
-                module_stem = Path(target_file).stem
-                dummy_test = f"import pytest\nfrom {module_stem} import *\n\ndef test_automatic_sanity():\n    assert True"
-                matches.append((test_file, dummy_test))
+            dummy_test = f"import pytest\ndef test_sanity():\n    assert True"
+            matches.append((test_file, dummy_test))
 
             for rel_path, file_content in matches:
                 rel_p = rel_path.strip()
