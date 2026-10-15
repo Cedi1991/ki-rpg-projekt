@@ -14,8 +14,9 @@
   - Klasse `Item` mit Attributen `name` (str), `value` (int) und `weight` (float).
   - Klasse `Merchant` mit Attributen `name` (str), `inventory` (list von Item) und `gold` (int).
   - Methoden für `Merchant`: `buy_from_player(self, player, item_name)` und `sell_to_player(self, player, item_name)` mit einfacher Preislogik.
-- [ ] **Kampfsystem (`src/combat.py`)**: Implementiere eine Monster-Datenklasse (Name, HP, Angriff, Gold-Drop) und eine Funktion `resolve_combat_round(player, monster)` im 3D-Kontext.
+- [x] **Kampfsystem (`src/combat.py`)**: Implementiere eine Monster-Datenklasse (Name, HP, Angriff, Gold-Drop) und eine Funktion `resolve_combat_round(player, monster)` im 3D-Kontext.
 - [ ] **Crafting & Werkstätten (`src/crafting.py`)**: Implementiere ein Rezept-System (`Recipe`), mit dem ein Spieler mehrere Rohstoffe zu hochwertigeren Items kombinieren kann.
 - [ ] **Verbrauchsgüter & Buffs (`src/consumables.py`)**: Erlaube das Benutzen von Heiltränken oder Nahrung aus dem Inventar.
 - [ ] **Speichern & Laden (`src/persistence.py`)**: Implementiere `save_player_to_json(player)` und `load_player_from_json(json_str)`, um den Spielstand zu serialisieren.
 - [ ] **Tests absichern (`tests/test_engine3d.py`)**: Schreibe Unit-Tests für die neue 3D-Engine und stelle sicher, dass `pytest` fehlerfrei durchläuft.
+- [ ] **Dynamisches Wettersystem & Tageszyklus (`src/weather.py`)**: Implementiere eine `WeatherSystem`-Klasse, die deterministisch zwischen Zuständen (Sonnig, Regen, Sturm, Nebel) wechselt und diese auf die Spielmechaniken auswirkt (z. B. eingeschränkte Sichtweite in der 3D-Engine, veränderte Häufigkeit von Monster-Spawns oder Bonus-XP bei Sturm), wobei der Zustand über die `src/world.py`-Position und Zeitlogik synchronisiert wird.
