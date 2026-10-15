@@ -1,0 +1,71 @@
+```python
+"""
+src/consumables.py
+
+Verbrauchsgüter & Buffs: Erlaubt das Benutzen von Heiltränken oder Nahrung aus dem Inventar.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Optional, List, Dict, Any
+import time
+
+
+@dataclass
+class Buff:
+    """Ein temporärer Effekt (Buff) auf einen Charakter."""
+    name: str
+    duration: float  # in Sekunden
+    effects: Dict[str, float] = field(default_factory=dict)
+    start_time: float = field(default_factory=time.time)
+
+    def is_active(self) -> bool:
+        """Prüft, ob der Buff noch aktiv ist."""
+        return time.time() - self.start_time < self.duration
+
+    def get_effect(self, stat: str) -> float:
+        """Gibt den Effekt auf eine bestimmte Statistik zurück, falls vorhanden."""
+        return self.effects.get(stat, 0.0)
+
+
+@dataclass
+class Consumable:
+    """Ein verbrauchbares Item (Heiltrank, Nahrung, etc.)."""
+    item_id: str
+    name: str
+    description: str
+    item_type: str  # z.B. 'heiltrank', 'nahrung', 'buff'
+    effects: Dict[str, float] = field(default_factory=dict)
+    buff_duration: float = 0.0  # Dauer eines Buffs in Sekunden, 0 = sofortiger Effekt
+    stackable: bool = False
+    quantity: int = 1
+
+    def apply(self, character: 'Character') -> str:
+        """
+        Wendet die Effekte des Verbrauchsguts auf den Charakter an.
+        Gibt eine Beschreibung der angewendeten Effekte zurück.
+        """
+        messages = []
+
+        for stat, value in self.effects.items():
+            if stat == 'hp':
+                old_hp = character.hp
+                character.hp = min(character.max_hp, character.hp + value)
+                healed = character.hp - old_hp
+                if healed > 0:
+                    messages.append(f"+{healed} HP")
+                elif healed < 0:
+                    messages.append(f"{healed} HP")
+            elif stat == 'mp':
+                old_mp = character.mp
+                character.mp = min(character.max_mp, character.mp + value)
+                restored = character.mp - old_mp
+                if restored > 0:
+                    messages.append(f"+{restored} MP")
+                elif restored < 0:
+                    messages.append(f"{restored} MP")
+            elif stat == 'stamina':
+                old_stam = character.stamina
+                character.stamina = min(character.max_stamina, character.stamina + value)
+                restored = character
