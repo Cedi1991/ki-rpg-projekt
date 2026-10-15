@@ -1,0 +1,132 @@
+```python
+# src/factions.py
+"""
+A minimal procedural faction and reputation system.
+
+The module exposes a simple API that can be used by the rest of the game
+to register factions, modify the player's reputation with them, and
+query how that reputation affects trade prices and NPC dialogue.
+
+The implementation is intentionally lightweight but fully typed and
+documented so that unit tests can rely on deterministic behaviour.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Dict, Callable, Optional
+
+# --------------------------------------------------------------------------- #
+# Data structures
+# --------------------------------------------------------------------------- #
+
+@dataclass
+class Faction:
+    """
+    Represents a faction in the game world.
+
+    Attributes
+    ----------
+    name : str
+        The unique name of the faction.
+    base_price_multiplier : float
+        The multiplier applied to trade prices when the player has neutral
+        reputation with this faction.
+    dialogue_modifier : Callable[[str, int], str]
+        A function that can modify NPC dialogue based on the player's
+        reputation.  The default implementation simply returns the
+        original text unchanged.
+    """
+    name: str
+    base_price_multiplier: float = 1.0
+    dialogue_modifier: Callable[[str, int], str] = field(
+        default=lambda text, rep: text
+    )
+
+    def price_multiplier(self, reputation: int) -> float:
+        """
+        Return a price multiplier based on reputation.
+
+        The multiplier is adjusted as follows:
+        * reputation <= -10 : 1.2  (prices are 20 % higher)
+        * reputation >= 10  : 0.8  (prices are 20 % lower)
+        * otherwise         : base_price_multiplier
+        """
+        if reputation <= -10:
+            return 1.2
+        if reputation >= 10:
+            return 0.8
+        return self.base_price_multiplier
+
+    def modify_dialogue(self, text: str, reputation: int) -> str:
+        """
+        Modify NPC dialogue based on reputation.
+
+        The default implementation simply returns the original text.
+        """
+        return self.dialogue_modifier(text, reputation)
+
+
+# --------------------------------------------------------------------------- #
+# Global registry and reputation storage
+# --------------------------------------------------------------------------- #
+
+_factions: Dict[str, Faction] = {}
+_player_reputation: Dict[str, int] = {}
+
+
+def register_faction(
+    name: str,
+    base_price_multiplier: float = 1.0,
+    dialogue_modifier: Optional[Callable[[str, int], str]] = None,
+) -> None:
+    """
+    Register a new faction.
+
+    Parameters
+    ----------
+    name : str
+        The unique name of the faction.
+    base_price_multiplier : float, optional
+        The neutral price multiplier for this faction.
+    dialogue_modifier : Callable[[str, int], str], optional
+        A function that modifies NPC dialogue based on reputation.
+    """
+    if name in _factions:
+        raise ValueError(f"Faction '{name}' is already registered.")
+    if dialogue_modifier is None:
+        dialogue_modifier = lambda text, rep: text
+    _factions[name] = Faction(name, base_price_multiplier, dialogue_modifier)
+
+
+def get_faction(name: str) -> Faction:
+    """
+    Retrieve a registered faction.
+
+    Raises
+    ------
+    KeyError
+        If the faction is not registered.
+    """
+    return _factions[name]
+
+
+def add_reputation(name: str, amount: int) -> None:
+    """
+    Modify the player's reputation with a faction.
+
+    Parameters
+    ----------
+    name : str
+        The faction name.
+    amount : int
+        The amount to add (can be negative).
+    """
+    if name not in _factions:
+        raise KeyError(f"Faction '{name}' is not registered.")
+    _player_reputation[name] = _player_reputation.get(name, 0) + amount
+
+
+def get_reputation(name: str) -> int:
+    """
+    Return the current reputation
