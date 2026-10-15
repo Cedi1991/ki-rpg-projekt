@@ -81,11 +81,11 @@ class Player:
             raise ValueError("Menge muss mindestens 1 sein.")
         if item_name not in self.inventory:
             return False
-        
+
         existing = self.inventory[item_name]
         if existing.quantity < quantity:
             return False
-        
+
         existing.quantity -= quantity
         if existing.quantity == 0:
             del self.inventory[item_name]
