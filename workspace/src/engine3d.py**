@@ -1,0 +1,206 @@
+"""src/engine3d.py
+Ein sehr leichtgewichtiger, rein textbasierter „3‑D‑Engine“-Stub.
+
+Die Engine stellt nur die minimalen Bausteine bereit, die für die
+Road‑Map‑Aufgabe nötig sind:
+
+*   `Position` – ein einfacher immutable Datentyp für (x, y, z) Koordinaten.
+*   `World` – ein rechteckiger Würfelraum, in dem ein Spieler sich bewegen
+    kann. Die Welt kennt ihre Dimensionen und prüft, ob ein Zug gültig ist.
+*   `move_player` – Hilfsfunktion, die einen Zug ausführt und dabei die
+    Randbedingungen der Welt beachtet.
+*   `render_slice` – gibt eine ASCII‑Darstellung einer einzelnen Z‑Ebene
+    zurück. Der Spieler wird mit ``P`` markiert, freie Felder mit ``.``.
+    
+Alle Funktionen sind rein, deterministisch und ohne Seiteneffekte, sodass
+sie leicht mit ``pytest`` zu testen sind.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Tuple, Literal
+
+# --------------------------------------------------------------------------- #
+# Datentypen
+# --------------------------------------------------------------------------- #
+
+@dataclass(frozen=True, slots=True)
+class Position:
+    """Immutable 3‑D‑Koordinate.
+
+    Attributes
+    ----------
+    x, y, z : int
+        Kartesische Koordinaten. ``0 ≤ x < width``, ``0 ≤ y < height``,
+        ``0 ≤ z < depth`` gilt innerhalb einer gültigen ``World``.
+    """
+    x: int
+    y: int
+    z: int
+
+    def as_tuple(self) -> Tuple[int, int, int]:
+        """Convenience‑Methode, die das Tupel (x, y, z) zurückgibt."""
+        return (self.x, self.y, self.z)
+
+
+# --------------------------------------------------------------------------- #
+# Welt‑Logik
+# --------------------------------------------------------------------------- #
+
+class World:
+    """Rechteckiger 3‑D‑Raum, in dem ein Spieler sich bewegen kann.
+
+    Die Welt ist rein logisch; es gibt keine grafische Ausgabe. Sie verwaltet
+    nur die Dimensionen und prüft, ob ein gegebener ``Position`` innerhalb
+    der Grenzen liegt.
+
+    Parameters
+    ----------
+    width, height, depth : int
+        Größe des Würfels. Alle Werte müssen positiv sein.
+    player_start : Position, optional
+        Startposition des Spielers. Falls nicht angegeben, wird (0, 0, 0)
+        verwendet. Die Position wird automatisch auf gültige Koordinaten
+        gekürzt, falls sie außerhalb liegt.
+    """
+
+    def __init__(
+        self,
+        width: int = 5,
+        height: int = 5,
+        depth: int = 5,
+        player_start: Position | None = None,
+    ) -> None:
+        if width <= 0 or height <= 0 or depth <= 0:
+            raise ValueError("World dimensions must be positive integers.")
+        self.width = width
+        self.height = height
+        self.depth = depth
+
+        # Normalisiere die Startposition, falls nötig
+        start = player_start or Position(0, 0, 0)
+        self.player_pos = self._clamp_position(start)
+
+    # ------------------------------------------------------------------- #
+    # interne Hilfsfunktionen
+    # ------------------------------------------------------------------- #
+
+    def _clamp_position(self, pos: Position) -> Position:
+        """Begrenze ``pos`` auf die gültigen Grenzen der Welt."""
+        x = max(0, min(pos.x, self.width - 1))
+        y = max(0, min(pos.y, self.height - 1))
+        z = max(0, min(pos.z, self.depth - 1))
+        return Position(x, y, z)
+
+    # ------------------------------------------------------------------- #
+    # öffentliche API
+    # ------------------------------------------------------------------- #
+
+    def is_within(self, pos: Position) -> bool:
+        """Prüfe, ob ``pos`` innerhalb der Weltgrenzen liegt."""
+        return (
+            0 <= pos.x < self.width
+            and 0 <= pos.y < self.height
+            and 0 <= pos.z < self.depth
+        )
+
+    def move_player(
+        self,
+        direction: Literal[
+            "up", "down", "left", "right", "forward", "backward"
+        ],
+    ) -> Position:
+        """Bewege den Spieler um ein Feld in die angegebene Richtung.
+
+        Die Methode ändert den internen ``player_pos`` und gibt die neue
+        Position zurück. Ein Zug, der die Weltgrenzen überschreiten würde,
+        wird ignoriert – die Position bleibt unverändert.
+
+        Parameters
+        ----------
+        direction : str
+            Eine der sechs zulässigen Richtungen.
+
+        Returns
+        -------
+        Position
+            Die (ggf. neue) Position des Spielers.
+        """
+        delta = {
+            "up": (0, -1, 0),
+            "down": (0, 1, 0),
+            "left": (-1, 0, 0),
+            "right": (1, 0, 0),
+            "forward": (0, 0, 1),   # +z Richtung
+            "backward": (0, 0, -1), # -z Richtung
+        }
+
+        if direction not in delta:
+            raise ValueError(f"Invalid direction: {direction!r}")
+
+        dx, dy, dz = delta[direction]
+        new_pos = Position(
+            self.player_pos.x + dx,
+            self.player_pos.y + dy,
+            self.player_pos.z + dz,
+        )
+        # Nur übernehmen, wenn innerhalb der Grenzen
+        if self.is_within(new_pos):
+            self.player_pos = new_pos
+        return self.player_pos
+
+    # ------------------------------------------------------------------- #
+    # Rendering
+    # ------------------------------------------------------------------- #
+
+    def render_slice(self, z: int) -> str:
+        """Erstelle eine ASCII‑Darstellung der Ebene ``z``.
+
+        Der Spieler wird mit ``P`` markiert, leere Felder mit ``.``.
+        Zeilen entsprechen dem ``y``‑Koordinaten‑System (0 oben).
+
+        Parameters
+        ----------
+        z : int
+            Die Z‑Ebene, die gerendert werden soll. Muss innerhalb der Welt
+            liegen, sonst wird ``ValueError`` ausgelöst.
+
+        Returns
+        -------
+        str
+            Mehrzeiliger String, der die Ebene visualisiert.
+        """
+        if not (0 <= z < self.depth):
+            raise ValueError(f"z={z} is out of bounds for depth {self.depth}")
+
+        rows = []
+        for y in range(self.height):
+            row_chars = []
+            for x in range(self.width):
+                if self.player_pos == Position(x, y, z):
+                    row_chars.append("P")
+                else:
+                    row_chars.append(".")
+            rows.append("".join(row_chars))
+        # Die Darstellung von oben nach unten (y=0 oben) ist üblich für
+        # Terminal‑Ausgaben.
+        return "\n".join(rows)
+
+
+# --------------------------------------------------------------------------- #
+# Convenience‑Funktionen (für die Tests und mögliche externe Nutzung)
+# --------------------------------------------------------------------------- #
+
+def move_player(world: World, direction: str) -> Position:
+    """Wrapper‑Funktion, die ``World.move_player`` aufruft.
+
+    Sie existiert, weil die ursprüngliche Aufgabenstellung von einer
+    freien Funktion sprach und nicht von einer Klassenmethode.
+    """
+    return world.move_player(direction)  # type: ignore[arg-type]
+
+
+def render_slice(world: World, z: int) -> str:
+    """Wrapper‑Funktion, die ``World.render_slice`` aufruft."""
+    return world.render_slice(z)
