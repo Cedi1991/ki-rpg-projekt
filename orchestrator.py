@@ -14,7 +14,7 @@ TEST_TIMEOUT_SECONDS = 15
 
 client = OpenAI(
     api_key=os.environ.get("GROQ_API_KEY"),
-    base_url="https://api.groq.com/openai/v1"
+    base_url="[https://api.groq.com/openai/v1](https://api.groq.com/openai/v1)"
 )
 
 def get_best_available_model() -> str:
@@ -83,7 +83,7 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Bulletproof Parser)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Absolute Fallback-Sicherheit)")
     print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -108,7 +108,7 @@ def main():
 
     print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
-    # Zieldatei aus dem Aufgabentext extrahieren (z.B. src/combat.py)
+    # Zieldatei aus dem Aufgabentext extrahieren
     target_file = "src/core.py"
     for word in target_task.split():
         if "src/" in word or ".py" in word:
@@ -120,14 +120,13 @@ def main():
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
         content = path.read_text(encoding="utf-8")
-        if len(content) > 200:
-            content = content[:200] + "\n# ... [gekürzt] ..."
+        if len(content) > 150:
+            content = content[:150] + "\n# ... [gekürzt] ..."
         codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{content}"
 
     prompt = f"""
-Schreibe den Python-Code für diese Aufgabe: {target_task}
-Liefere den Code in einem sauberen Markdown-Codeblock (```python ... ```).
-Niemals modul.py bearbeiten!
+Schreibe reinen Python-Code für diese Aufgabe: {target_task}
+Schreibe valides Python. NIEMALS modul.py bearbeiten!
 """
 
     success = False
@@ -153,17 +152,17 @@ Niemals modul.py bearbeiten!
 
             raw_text = response.choices[0].message.content
             
-            # BULLETPROOF PARSER: Findet absolut JEDEN Python-Codeblock und nutzt ihn!
+            # 1. Versuche Codeblöcke per Regex zu finden
             code_blocks = re.findall(r"```(?:python)?\s*(.*?)```", raw_text, re.DOTALL)
             
+            # 2. ULTIMATIVER FALLBACK: Wenn keine Backticks da sind, nimm den gesamten Text!
             if not code_blocks:
-                raise ValueError("Die KI konnte keine Codeblöcke generieren.")
+                code_blocks = [raw_text.strip()]
 
             matches = []
-            # Den ersten Codeblock nehmen wir für die Zieldatei
             matches.append((target_file, code_blocks[0]))
 
-            # Falls es einen zweiten Codeblock gibt, ist das der Test. Ansonsten generieren wir einen sicheren Test.
+            # Test-Datei generieren oder aus zweitem Block nehmen
             test_file = f"tests/test_{Path(target_file).name}"
             if len(code_blocks) >= 2:
                 matches.append((test_file, code_blocks[1]))
