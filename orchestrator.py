@@ -17,8 +17,8 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1"
 )
 
-# Verwende ein stabiles, standardmäßig verfügbares Groq-Modell
-MODEL_ID = "llama-3.1-70b-versatile"
+# Verwende ein stabiles, dauerhaft verfügbares Standardmodell
+MODEL_ID = "llama3-70b-8192"
 
 def run_tests() -> tuple[bool, str]:
     try:
@@ -68,7 +68,7 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Modell korrigiert)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Aktives Modell: Llama 3 70B)")
     print(f"📌 Verwendetes Modell: {MODEL_ID}")
     print("==========================================================")
 
