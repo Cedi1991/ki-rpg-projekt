@@ -67,25 +67,33 @@ def clean_code(raw_content: str) -> str:
 def append_creative_next_task(todo_path: Path):
     try:
         current_content = todo_path.read_text(encoding="utf-8")
-        expansion_prompt = "Hier ist die aktuelle TODO.md:\n" + current_content + "\nDer letzte Task war erfolgreich. Erfinde EINEN neuen, größeren Task für das 3D-RPG als nächsten `- [ ]` Punkt. Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Beschreibung...`"
-        
+        expansion_prompt = f"""
+Du bist der Chef-Architekt des ambitioniertesten und besten RPGs der Welt.
+Hier ist die aktuelle TODO.md:
+{current_content}
+
+Der letzte Task wurde erfolgreich implementiert und getestet.
+Erfinde EINEN neuen, absolut epischen und bahnbrechenden Task (z.B. aus den Bereichen: Advanced 3D Engine, Dynamische Welt-Simulation, KI-gesteuerte NPCs mit Erinnerungsvermögen, Echtzeit-Netzwerk-Multiplayer, komplexe Ökonomie- und Handwerkssysteme oder immersive Magie- und Kampfsysteme), der das Spiel auf ein neues Level hebt.
+Der Task muss als nächster `- [ ]` Punkt an das Ende der TODO.md angehängt werden.
+Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Detaillierte Beschreibung des High-End-Features...`
+"""
         response = client.chat.completions.create(
             model=MODEL_ID,
             messages=[{"role": "user", "content": expansion_prompt}],
-            max_tokens=150,
-            temperature=0.7,
+            max_tokens=200,
+            temperature=0.8,
         )
         new_task = response.choices[0].message.content.strip()
         if new_task.startswith("- [ ]"):
             updated_content = current_content.strip() + "\n" + new_task + "\n"
             todo_path.write_text(updated_content, encoding="utf-8")
-            print(f"✨ Neuer Task hinzugefügt: {new_task}")
+            print(f"🌟 Neues World-Class Feature hinzugefügt: {new_task}")
     except Exception as e:
-        print(f"⚠️ Konnte keinen neuen Task automatisch generieren: {e}")
+        print(f"⚠️ Konnte kein neues Epic-Task generieren: {e}")
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Volle Modul-Autonomie)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Volle Modul-Autonomie & Push)")
     print(f"📌 Aktives Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -128,7 +136,7 @@ def main():
         f"AKTUELLER INHALT DER DATEI ({target_file}):\n"
         f"```python\n{current_target_content}\n```\n\n"
         f"REGELN:\n"
-        f"1. Passe die Datei `{target_file}` so an, dass alle bestehenden Tests (wie z. B. `test_crafting.py` und `test_economy.py`, die Parameter wie `gold` in Player oder `category` in Item erwarten) fehlerfrei durchlaufen.\n"
+        f"1. Passe die Datei `{target_file}` so an, dass alle bestehenden Tests fehlerfrei durchlaufen.\n"
         f"2. Antworte AUSSCHLIESSLICH mit dem vollständigen, validen Python-Code in einem Markdown-Codeblock (```python ... ```).\n"
         f"3. Kein erklärender Text!\n"
         f"4. NIEMALS modul.py bearbeiten!"
@@ -190,6 +198,9 @@ def main():
                 subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"])
                 subprocess.run(["git", "add", "workspace/"])
                 subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}'"])
+                
+                # NEU: Automatischer Git-Push, damit die Commits und TODO.md-Änderungen im Repo gespeichert bleiben!
+                subprocess.run(["git", "push"], capture_output=True)
                 break
             else:
                 print(f"❌ Tests fehlgeschlagen:\n{test_output}")
