@@ -56,9 +56,37 @@ def rollback_workspace():
     subprocess.run(["git", "checkout", "workspace/"], capture_output=True)
     subprocess.run(["git", "clean", "-fd", "workspace/"], capture_output=True)
 
+def append_creative_next_task(todo_path: Path):
+    """Lässt das LLM nach Abschluss einer Aufgabe automatisch einen neuen, 
+       grösseren und experimentelleren Task zur TODO.md hinzufügen."""
+    try:
+        current_content = todo_path.read_text(encoding="utf-8")
+        expansion_prompt = f"""
+Du bist der visionäre Chef-Architekt dieses Python-Projekts.
+Hier ist die aktuelle TODO.md:
+{current_content}
+
+Der letzte Task wurde gerade erfolgreich implementiert und getestet.
+Deine Aufgabe: Erfinde EINEN neuen, größeren, experimentelleren und spannenderen Task (z.B. aus den Bereichen erweiterte 3D-Grafik, prozedurale Weltgenerierung, Physik-Simulationen, KI-Verhaltensmuster oder Multiplayer-Features), der als nächster `- [ ]` Punkt an das Ende der TODO.md angehängt werden soll.
+Antworte AUSSCHLIESSLICH mit dem neuen Task-String im Format: `- [ ] **Titel (`src/dateiname.py`)**: Beschreibung...`
+"""
+        response = client.chat.completions.create(
+            model=MODEL_ID,
+            messages=[{"role": "user", "content": expansion_prompt}],
+            max_tokens=150,
+            temperature=0.7,
+        )
+        new_task = response.choices[0].message.content.strip()
+        if new_task.startswith("- [ ]"):
+            updated_content = current_content.strip() + "\n" + new_task + "\n"
+            todo_path.write_text(updated_content, encoding="utf-8")
+            print(f"✨ Neuer autonomer Task generiert & hinzugefügt: {new_task}")
+    except Exception as e:
+        print(f"⚠️ Konnte keinen neuen Task automatisch generieren: {e}")
+
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Intelligenter Multi-Parser)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Autonome 3D-Evolution)")
     print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -70,7 +98,7 @@ def main():
     lines = todo_content.splitlines()
     target_line_idx = -1
     target_task = None
-    
+
     for idx, line in enumerate(lines):
         if line.strip().startswith("- [ ]"):
             target_line_idx = idx
@@ -93,7 +121,7 @@ def main():
 
     prompt = f"""
 Du bist ein autonomer Software-Architekt und Senior Python Developer.
-Dein Ziel ist es, das modulare RPG- und Wirtschaftssimulations-Projekt Schritt für Schritt zu erweitern.
+Dein Ziel ist es, das modulare 3D-RPG- und Wirtschaftssimulations-Projekt Schritt für Schritt zu erweitern.
 
 AKTUELLE ROADMAP (TODO.md):
 {todo_content}
@@ -107,7 +135,8 @@ BESTEHENDE CODEBASIS (Auszug):
 ARCHITEKTUR-VORGABEN:
 1. Erstelle das nötige Modul unter src/ und passende Unit-Tests unter tests/test_*.py.
 2. Schreibe sauberen, funktionsfähigen Python-Code.
-3. Verwende Markdown-Codeblöcke und schreibe den Dateipfad (z.B. src/persistence.py oder tests/test_persistence.py) direkt vor den jeweiligen Block.
+3. Verwende Markdown-Codeblöcke und schreibe den Dateipfad (z.B. src/engine3d.py oder tests/test_engine3d.py) direkt vor den jeweiligen Block.
+4. NIEMALS modul.py bearbeiten!
 """
 
     success = False
@@ -115,7 +144,7 @@ ARCHITEKTUR-VORGABEN:
 
     for attempt in range(1, MAX_RETRIES_PER_FEAT + 1):
         print(f"🤖 KI plant & programmiert (Versuch {attempt}/{MAX_RETRIES_PER_FEAT})...")
-        
+
         try:
             if attempt > 1:
                 print("⏳ Warte 10 Sekunden...")
@@ -130,11 +159,10 @@ ARCHITEKTUR-VORGABEN:
                 max_tokens=2000,
                 temperature=0.2,
             )
-            
+
             raw_text = response.choices[0].message.content
             matches = []
 
-            # 1. Versuch: JSON-Struktur parsen (falls vorhanden)
             try:
                 data = json.loads(raw_text)
                 if "files" in data:
@@ -143,21 +171,18 @@ ARCHITEKTUR-VORGABEN:
             except Exception:
                 pass
 
-            # 2. Versuch: Explizite Dateimarkierungen via Regex suchen
             if not matches:
                 pattern = r"(?:###|##|\*\*)\s*(?:DATEI|File):\s*([^\n`]+).*?```(?:python)?\s*(.*?)```"
                 matches = re.findall(pattern, raw_text, re.DOTALL | re.IGNORECASE)
 
-            # 3. Versuch (Fallback): Alle Codeblöcke extrahieren und intelligent zuordnen
             if not matches:
                 code_blocks = re.findall(r"```(?:python)?\s*(.*?)```", raw_text, re.DOTALL)
                 if code_blocks:
-                    # Versuche den Dateinamen aus der Aufgabe zu erkennen
                     target_file = "src/modul.py"
                     for word in target_task.split():
                         if "src/" in word or ".py" in word:
                             target_file = word.strip("`'\".,()")
-                    
+
                     matches.append((target_file, code_blocks[0]))
                     if len(code_blocks) >= 2:
                         test_file = f"tests/test_{Path(target_file).name}"
@@ -168,6 +193,8 @@ ARCHITEKTUR-VORGABEN:
 
             for rel_path, file_content in matches:
                 rel_p = rel_path.strip()
+                if "modul.py" in rel_p.lower():
+                    continue  # Sicherheitsnetz: modul.py blockieren
                 full_p = WORKSPACE_DIR / rel_p
                 full_p.parent.mkdir(parents=True, exist_ok=True)
                 full_p.write_text(file_content.strip(), encoding="utf-8")
@@ -178,15 +205,18 @@ ARCHITEKTUR-VORGABEN:
 
             print("🧪 Führe Tests aus...")
             test_passed, test_output = run_tests()
-            
+
             if test_passed:
                 print("✅ Alle Tests erfolgreich bestanden!")
                 success = True
-                
+
+                # Automatisch einen neuen, kreativeren Task anhängen
+                append_creative_next_task(TODO_FILE)
+
                 subprocess.run(["git", "config", "--global", "user.name", "AI Evolution Bot"])
                 subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"])
                 subprocess.run(["git", "add", "workspace/"])
-                subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}'"])
+                subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}' & expandiert Roadmap"])
                 break
             else:
                 print(f"❌ Tests fehlgeschlagen:\n{test_output}")
