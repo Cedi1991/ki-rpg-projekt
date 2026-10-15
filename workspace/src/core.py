@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 @dataclass
 class Item:
     name: str
-    category: str  # z.B. "weapon", "potion", "material", "quest"
-    base_value: int
+    category: str = "misc"  # z.B. "weapon", "potion", "material", "quest"
+    base_value: int = 10
     quantity: int = 1
 
     def __post_init__(self) -> None:
@@ -102,3 +102,11 @@ class Player:
             item.base_value * item.quantity for item in self.inventory.values()
         )
         return self.gold + inventory_value
+
+
+@dataclass
+class Merchant:
+    gold: int = 500
+    buy_markup: float = 1.0
+    sell_markup: float = 1.0
+    inventory: dict[str, Item] = field(default_factory=dict)
