@@ -1,0 +1,61 @@
+# src/world.py
+from dataclasses import dataclass, field
+from typing import List, Dict, Any
+
+# ----------------------------------------------------------------------
+# Basic game entities used by the test‑suite
+# ----------------------------------------------------------------------
+@dataclass
+class Player:
+    """Represents a player in the game world."""
+    name: str
+    gold: int = 0
+    inventory: List["Item"] = field(default_factory=list)
+
+    def add_item(self, item: "Item") -> None:
+        """Add an item to the player's inventory."""
+        self.inventory.append(item)
+
+    def remove_item(self, item: "Item") -> None:
+        """Remove an item from the player's inventory if present."""
+        if item in self.inventory:
+            self.inventory.remove(item)
+
+    def has_item(self, item: "Item") -> bool:
+        """Check if the player owns a specific item."""
+        return item in self.inventory
+
+
+@dataclass
+class Item:
+    """Represents an item that can be crafted or traded."""
+    name: str
+    category: str
+    attributes: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        # Ensure category is a string for consistency
+        if not isinstance(self.category, str):
+            raise TypeError("category must be a string")
+
+
+# ----------------------------------------------------------------------
+# World state and utilities
+# ----------------------------------------------------------------------
+class World:
+    """Container for global world state."""
+    def __init__(self):
+        self.players: Dict[str, Player] = {}
+        self.items: List[Item] = []
+
+    def add_player(self, player: Player) -> None:
+        self.players[player.name] = player
+
+    def get_player(self, name: str) -> Player:
+        return self.players[name]
+
+    def add_item(self, item: Item) -> None:
+        self.items.append(item)
+
+    def find_items_by_category(self, category: str) -> List[Item]:
+        return [i for i in self.items if i.category == category]
