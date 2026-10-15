@@ -1,28 +1,18 @@
-# Projekt-Roadmap: Modulare RPG- & Wirtschaftssimulation
+# Projekt-Roadmap: Modulares 3D-RPG & Wirtschaftssimulation
 
-## Architektur-Vorgaben für die KI
-- Jedes neue System wird als eigenes Modul unter `src/` angelegt (z.B. `src/economy.py`, `src/combat.py`).
-- Alle Funktionen müssen deterministisch testbar sein (bei Zufallslogik immer einen optionalen `seed` oder feste Parameter erlauben).
-- Bestehende Klassen in `src/core.py` dürfen um neue Attribute/Methoden erweitert werden, solange alle alten Tests in `tests/test_core.py` grün bleiben.
+## Architektur-Vorgaben für die KI (WICHTIG)
+- **Niemals modul.py bearbeiten!** Alle Änderungen müssen in den echten Modulen unter `src/` (z. B. `src/engine3d.py`, `src/core.py`, `src/economy.py`) vorgenommen werden.
+- Jedes neue Feature wird als echtes Python-Modul implementiert.
+- Alle Funktionen müssen deterministisch und testbar sein (mit pytest absichern in `tests/`).
+- Bestehende Tests in `tests/` dürfen nicht fehlschlagen.
 
-## Geplant (Offen)
+## Geplant (Offene Aufgaben)
 
-- [x] Erstelle nach jedem todo ein logisch neues todo
-- [x] Erstelle das Spiel in 3d und erweitere es durchweg
-- [x] Erstelle eine interaktive main.py als spielbares Text-Menü für das RPG und die Wirtschaftssimulation
-- [x] **Markt & Handel (`src/economy.py`)**: Implementiere eine Klasse `Merchant` mit einem eigenen Inventar und Goldbestand sowie den Methoden `buy_from_player(player, item_name)` und `sell_to_player(player, item_name)` inklusive dynamischer Preisfaktoren.
-- [x] **Kampfsystem (`src/combat.py`)**: Implementiere eine `Monster`‑Datenklasse (Name, HP, Angriff, Gold‑Drop) und eine Funktion `resolve_combat_round(player, monster)`, die Schaden berechnet, Tod prüft und bei Sieg automatisch Gold an den Spieler vergibt.
-- [x] **Crafting & Werkstätten (`src/crafting.py`)**: Implementiere ein Rezept‑System (`Recipe`), mit dem ein Spieler mehrere Rohstoffe aus seinem Inventar zu einem höherwertigen Item kombinieren kann (`craft_item(player, recipe)`).
-- [x] **Verbrauchsgüter & Buffs (`src/consumables.py`)**: Ermögliche das Benutzen von Heiltränken oder Nahrung aus dem Inventar (`use_item(player, item_name)`), um `hp` bis maximal `max_hp` wiederherzustellen.
-- [x] **Speichern & Laden (`src/persistence.py`)**: Implementiere `save_player_to_json(player) -> str` und `load_player_from_json(json_str) -> Player`, um den kompletten Spielstand (inkl. Inventar) zu serialisieren.
-- [x] **Mehrspieler‑Modus (`src/multiplayer.py`)**: Netzwerk‑Synchronisation, Server‑Client‑Architektur und Spieler‑Interaktion.
-- [x] **Quests & Storyline (`src/quests.py`)**: Quest‑Logik, Belohnungen und Fortschritts‑Tracking.
-- [x] **Grafische Benutzeroberfläche (`src/gui.py`)**: Grundlegendes UI mit `tkinter` für Inventar‑Anzeige und Interaktionen.
-- [x] **Implementierung eines einfachen Dialogsystems (`src/dialogue.py`)**
-- [x] Erweiterung des Mehrspieler‑Modus um Lobby‑ und Chat‑Funktionen.
-- [x] Persistenz für Quest‑Fortschritt in `src/persistence.py`.
-
-## Weitere Ideen (optional)
-- [x] Implementierung eines einfachen Dialogsystems (`src/dialogue.py`).
-- [x] Erweiterung des Mehrspieler‑Modus um Lobby‑ und Chat‑Funktionen.
-- [x] Persistenz für Quest‑Fortschritt in `src/persistence.py`.
+- [ ] **3D-Engine & Rendering (`src/engine3d.py`)**: Implementiere eine einfache ASCII/Terminal-basierte 3D-Raycasting- oder Gitter-Engine (oder 3D-Prognose-Logik), damit sich der Spieler in einem 3D-Raum bewegen kann.
+- [ ] **3D-Welt & Positionierung (`src/world.py`)**: Erstelle eine 3D-Koordinaten-Logik (`x, y, z`), bei der der Spieler auf Händler und Monster im dreidimensionalen Raum trifft.
+- [ ] **Markt & Handel (`src/economy.py`)**: Implementiere eine Klasse `Merchant` mit eigenem Inventar und dynamischer Preisregulierung basierend auf Angebot und Nachfrage.
+- [ ] **Kampfsystem (`src/combat.py`)**: Implementiere eine Monster-Datenklasse (Name, HP, Angriff, Gold-Drop) und eine Funktion `resolve_combat_round(player, monster)` im 3D-Kontext.
+- [ ] **Crafting & Werkstätten (`src/crafting.py`)**: Implementiere ein Rezept-System (`Recipe`), mit dem ein Spieler mehrere Rohstoffe zu hochwertigeren Items kombinieren kann.
+- [ ] **Verbrauchsgüter & Buffs (`src/consumables.py`)**: Erlaube das Benutzen von Heiltränken oder Nahrung aus dem Inventar.
+- [ ] **Speichern & Laden (`src/persistence.py`)**: Implementiere `save_player_to_json(player)` und `load_player_from_json(json_str)`, um den Spielstand zu serialisieren.
+- [ ] **Tests absichern (`tests/test_engine3d.py`)**: Schreibe Unit-Tests für die neue 3D-Engine und stelle sicher, dass `pytest` fehlerfrei durchläuft.
