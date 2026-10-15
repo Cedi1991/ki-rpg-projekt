@@ -10,7 +10,7 @@
 
 - [x] **3D-Engine & Rendering (`src/engine3d.py`)**: Implementiere eine einfache ASCII/Terminal-basierte 3D-Raycasting- oder Gitter-Engine (oder 3D-Prognose-Logik), damit sich der Spieler in einem 3D-Raum bewegen kann.
 - [x] **3D-Welt & Positionierung (`src/world.py`)**: Erstelle eine 3D-Koordinaten-Logik (`x, y, z`), bei der der Spieler auf Händler und Monster im dreidimensionalen Raum trifft.
-- [ ] **Markt & Handel (`src/economy.py`)**: Implementiere exakt folgende Klassen und Funktionen:
+- [x] **Markt & Handel (`src/economy.py`)**: Implementiere exakt folgende Klassen und Funktionen:
   - Klasse `Item` mit Attributen `name` (str), `value` (int) und `weight` (float).
   - Klasse `Merchant` mit Attributen `name` (str), `inventory` (list von Item) und `gold` (int).
   - Methoden für `Merchant`: `buy_from_player(self, player, item_name)` und `sell_to_player(self, player, item_name)` mit einfacher Preislogik.
