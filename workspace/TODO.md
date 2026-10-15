@@ -9,7 +9,7 @@
 ## Geplant (Offene Aufgaben)
 
 
-- [ ] **Echtzeit-Wettersystem & Tag/Nacht-Zyklus (`src/weather.py`)**: Implementiere ein dynamisches Wettersystem, das Regen, Sturm und Sonnenschein simuliert und die Sichtweite sowie Kampffähigkeiten im Dungeon beeinflusst.
+- [x] **Echtzeit-Wettersystem & Tag/Nacht-Zyklus (`src/weather.py`)**: Implementiere ein dynamisches Wettersystem, das Regen, Sturm und Sonnenschein simuliert und die Sichtweite sowie Kampffähigkeiten im Dungeon beeinflusst.
 - [ ] **Prozedurales Fraktions- & Questsystem (`src/factions.py`)**: Erstelle ein System für rivalisierende Fraktionen, bei dem der Spieler durch Taten Rufpunkte sammelt, die Einfluss auf Handelspreise und NPC-Dialoge haben.
 - [ ] **Erweitertes Magie- und Zaubersystem (`src/magic.py`)**: Programmiere ein Manasystem mit kombinierbaren Elementarzaubern, Wirkungsbereichen (AoE) und visuellen Effekt-Berechnungen für Kämpfe.
 - [x] **3D-Engine & Rendering (`src/engine3d.py`)**: Implementiere eine einfache ASCII/Terminal-basierte 3D-Raycasting- oder Gitter-Engine (oder 3D-Prognose-Logik), damit sich der Spieler in einem 3D-Raum bewegen kann.
