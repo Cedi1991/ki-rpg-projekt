@@ -12,28 +12,14 @@ TODO_FILE = WORKSPACE_DIR / "TODO.md"
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
 
+# Korrigierte Basis-URL ohne Markdown-Müll
 client = OpenAI(
     api_key=os.environ.get("GROQ_API_KEY"),
-    base_url="[https://api.groq.com/openai/v1](https://api.groq.com/openai/v1)"
+    base_url="https://api.groq.com/openai/v1"
 )
 
-def get_best_available_model() -> str:
-    try:
-        models = client.models.list()
-        available_ids = [m.id for m in models.data]
-        for m_id in available_ids:
-            if "guard" not in m_id.lower() and "whisper" not in m_id.lower() and ("gpt" in m_id.lower() or "qwen" in m_id.lower() or "llama" in m_id.lower()):
-                return m_id
-        for m_id in available_ids:
-            if "guard" not in m_id.lower() and "whisper" not in m_id.lower():
-                return m_id
-        if available_ids:
-            return available_ids[0]
-    except Exception as e:
-        print(f"⚠️ Konnte Modelle nicht automatisch abfragen: {e}")
-    return "openai/gpt-oss-120b"
-
-MODEL_ID = get_best_available_model()
+# Festes Modell, um Netzwerkfehler beim automatischen Abfragen zu verhindern
+MODEL_ID = "llama-3.3-70b-versatile"
 
 def run_tests() -> tuple[bool, str]:
     try:
@@ -83,8 +69,8 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Absolute Fallback-Sicherheit)")
-    print(f"📌 Automatisch gewähltes Modell: {MODEL_ID}")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (URL korrigiert)")
+    print(f"📌 Verwendetes Modell: {MODEL_ID}")
     print("==========================================================")
 
     if not TODO_FILE.exists():
@@ -108,7 +94,6 @@ def main():
 
     print(f"🤖 Nächste Aufgabe für die KI: {target_task}")
 
-    # Zieldatei aus dem Aufgabentext extrahieren
     target_file = "src/core.py"
     for word in target_task.split():
         if "src/" in word or ".py" in word:
@@ -137,8 +122,8 @@ Schreibe valides Python. NIEMALS modul.py bearbeiten!
 
         try:
             if attempt > 1:
-                print("⏳ Warte 30 Sekunden wegen Ratenlimit...")
-                time.sleep(30)
+                print("⏳ Warte 20 Sekunden...")
+                time.sleep(20)
 
             response = client.chat.completions.create(
                 model=MODEL_ID,
@@ -146,23 +131,19 @@ Schreibe valides Python. NIEMALS modul.py bearbeiten!
                     {"role": "system", "content": "Du bist ein präziser Programmier-Assistent."},
                     {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER:\n{last_error}" if last_error else "")}
                 ],
-                max_tokens=400,
+                max_tokens=600,
                 temperature=0.2,
             )
 
             raw_text = response.choices[0].message.content
             
-            # 1. Versuche Codeblöcke per Regex zu finden
             code_blocks = re.findall(r"```(?:python)?\s*(.*?)```", raw_text, re.DOTALL)
-            
-            # 2. ULTIMATIVER FALLBACK: Wenn keine Backticks da sind, nimm den gesamten Text!
             if not code_blocks:
                 code_blocks = [raw_text.strip()]
 
             matches = []
             matches.append((target_file, code_blocks[0]))
 
-            # Test-Datei generieren oder aus zweitem Block nehmen
             test_file = f"tests/test_{Path(target_file).name}"
             if len(code_blocks) >= 2:
                 matches.append((test_file, code_blocks[1]))
