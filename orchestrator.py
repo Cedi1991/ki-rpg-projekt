@@ -17,8 +17,35 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1"
 )
 
-# Verwende ein stabiles, dauerhaft verfügbares Standardmodell
-MODEL_ID = "llama3-70b-8192"
+def get_best_available_model() -> str:
+    """Sucht sich vollautomatisch das aktuell funktionierende Modell über die API heraus."""
+    try:
+        models = client.models.list()
+        available_ids = [m.id for m in models.data]
+        
+        # 1. Priorität: Suche nach stabilen Llama 3 / 3.3 oder Qwen Modellen
+        for m_id in available_ids:
+            m_lower = m_id.lower()
+            if "guard" not in m_lower and "whisper" not in m_lower:
+                if "llama-3" in m_lower or "llama3" in m_lower or "qwen" in m_lower:
+                    print(f"🎯 Automatisch gewähltes Modell: {m_id}")
+                    return m_id
+                    
+        # 2. Fallback: Nimm das erste verfügbare Nicht-Guard/Whisper-Modell
+        for m_id in available_ids:
+            if "guard" not in m_id.lower() and "whisper" not in m_id.lower():
+                print(f"🎯 Fallback-Modell gewählt: {m_id}")
+                return m_id
+                
+        if available_ids:
+            return available_ids[0]
+    except Exception as e:
+        print(f"⚠️ Konnte Modelle nicht automatisch abfragen ({e}), nutze Standard-Fallback.")
+        
+    # Ultativer Hardcoded Fallback, falls die API-Abfrage fehlschlägt
+    return "llama3-70b-8192"
+
+MODEL_ID = get_best_available_model()
 
 def run_tests() -> tuple[bool, str]:
     try:
@@ -68,8 +95,8 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Aktives Modell: Llama 3 70B)")
-    print(f"📌 Verwendetes Modell: {MODEL_ID}")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Autonome Modus-Suche aktiv)")
+    print(f"📌 Aktives Modell: {MODEL_ID}")
     print("==========================================================")
 
     if not TODO_FILE.exists():
