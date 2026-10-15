@@ -12,7 +12,6 @@ TODO_FILE = WORKSPACE_DIR / "TODO.md"
 MAX_RETRIES_PER_FEAT = 3           
 TEST_TIMEOUT_SECONDS = 15          
 
-# OpenAI-Client mit explizitem Timeout, damit Verbindungen nicht hängen bleiben
 client = OpenAI(
     api_key=os.environ.get("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1",
@@ -20,8 +19,28 @@ client = OpenAI(
     max_retries=2
 )
 
-# Fester Modell-Standard, um Fehler bei der automatischen Abfrage zu umgehen
-MODEL_ID = "llama3-70b-8192"
+def get_dynamic_model() -> str:
+    """Ermittelt vollautomatisch ein aktives Modell oder nutzt moderne Fallbacks."""
+    try:
+        models = client.models.list()
+        available_ids = [m.id for m in models.data]
+        # Suche nach gängigen starken Modellen
+        for m_id in available_ids:
+            m_lower = m_id.lower()
+            if "guard" not in m_lower and "whisper" not in m_lower:
+                if "llama-3.3" in m_lower or "llama3-3" in m_lower or "70b" in m_lower:
+                    print(f"🎯 Dynamisch gewähltes Modell: {m_id}")
+                    return m_id
+        for m_id in available_ids:
+            if "guard" not in m_id.lower() and "whisper" not in m_id.lower():
+                return m_id
+    except Exception as e:
+        print(f"⚠️ Konnte Modelle nicht live abfragen: {e}")
+    
+    # Moderner, aktueller Fallback
+    return "llama-3.3-70b-versatile"
+
+MODEL_ID = get_dynamic_model()
 
 def run_tests() -> tuple[bool, str]:
     try:
@@ -79,7 +98,7 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Mit Verbindungs-Timeouts)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Dynamische Modellauswahl)")
     print(f"📌 Aktives Modell: {MODEL_ID}")
     print("==========================================================")
 
