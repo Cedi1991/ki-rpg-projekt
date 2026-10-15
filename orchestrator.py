@@ -20,25 +20,19 @@ client = OpenAI(
 )
 
 def get_dynamic_model() -> str:
-    """Ermittelt vollautomatisch ein aktives Modell oder nutzt moderne Fallbacks."""
     try:
         models = client.models.list()
         available_ids = [m.id for m in models.data]
-        # Suche nach gängigen starken Modellen
         for m_id in available_ids:
             m_lower = m_id.lower()
             if "guard" not in m_lower and "whisper" not in m_lower:
-                if "llama-3.3" in m_lower or "llama3-3" in m_lower or "70b" in m_lower:
-                    print(f"🎯 Dynamisch gewähltes Modell: {m_id}")
+                if "gpt" in m_lower or "qwen" in m_lower or "llama" in m_lower:
                     return m_id
-        for m_id in available_ids:
-            if "guard" not in m_id.lower() and "whisper" not in m_id.lower():
-                return m_id
+        if available_ids:
+            return available_ids[0]
     except Exception as e:
         print(f"⚠️ Konnte Modelle nicht live abfragen: {e}")
-    
-    # Moderner, aktueller Fallback
-    return "llama-3.3-70b-versatile"
+    return "openai/gpt-oss-120b"
 
 MODEL_ID = get_dynamic_model()
 
@@ -63,7 +57,6 @@ def rollback_workspace():
     subprocess.run(["git", "clean", "-fd", "workspace/"], capture_output=True)
 
 def clean_code(raw_content: str) -> str:
-    """Entfernt versehentlich mitgeschickte Markdown-Backticks aus dem Code."""
     content = raw_content.strip()
     content = re.sub(r"^```(?:python)?\s*\n", "", content, flags=re.IGNORECASE)
     content = re.sub(r"^```\s*\n", "", content)
@@ -98,7 +91,7 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Besch
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Dynamische Modellauswahl)")
+    print("🚀 Projekt-Zyklus 1/1 gestartet (Robuste Modul-Kompatibilität)")
     print(f"📌 Aktives Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -134,13 +127,19 @@ def main():
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
         content = path.read_text(encoding="utf-8")
-        if len(content) > 150:
-            content = content[:150] + "\n# ... [gekürzt] ..."
         codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{content}"
 
     prompt = f"""
-Schreibe reinen Python-Code für diese Aufgabe: {target_task}
-Schreibe valides Python in Codeblöcken. NIEMALS modul.py bearbeiten!
+Du bist ein Senior Python Developer. Du arbeitest an einem modularen RPG-Projekt.
+Hier ist die gesamte bestehende Codebasis:
+{codebase_context}
+
+AUFGABE: {target_task}
+
+WICHTIGE REGELN:
+1. Behalte bestehende Klassen und Funktionen (wie `Item`, `Player` etc.) in `src/core.py` unbedingt bei und erweitere sie nur, damit bestehende Tests nicht brechen!
+2. Schreibe sauberen, vollständigen Python-Code in Codeblöcken.
+3. NIEMALS modul.py bearbeiten!
 """
 
     success = False
@@ -158,9 +157,9 @@ Schreibe valides Python in Codeblöcken. NIEMALS modul.py bearbeiten!
                 model=MODEL_ID,
                 messages=[
                     {"role": "system", "content": "Du bist ein präziser Programmier-Assistent."},
-                    {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER:\n{last_error}" if last_error else "")}
+                    {"role": "user", "content": prompt + (f"\n\nLETZTER TEST-FEHLER:\n{last_error}" if last_error else "")}
                 ],
-                max_tokens=600,
+                max_tokens=800,
                 temperature=0.2,
             )
 
