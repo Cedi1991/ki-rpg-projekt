@@ -118,3 +118,4 @@ class WeatherSystem:
     def get_lighting_parameters(self) -> Dict[str, float]:
         """Get lighting parameters for 3D engine."""
         sun_x, sun_y = self.day_cycle.get_sun_position()
+        return
