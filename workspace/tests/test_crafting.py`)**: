@@ -1,0 +1,5 @@
+import pytest
+from crafting import *
+
+def test_automatic_sanity():
+    assert True

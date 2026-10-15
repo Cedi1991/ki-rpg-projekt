@@ -1,0 +1,62 @@
+```python
+"""Crafting & Werkstätten - Rezept-System für Spieler."""
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any
+
+
+@dataclass
+class Item:
+    """Repräsentiert ein Spiel-Item."""
+    id: str
+    name: str
+    description: str = ""
+    stack_size: int = 1
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        if not self.id or not isinstance(self.id, str):
+            raise ValueError("Item.id muss ein nicht-leerer String sein.")
+        if not self.name or not isinstance(self.name, str):
+            raise ValueError("Item.name muss ein nicht-leerer String sein.")
+        if self.stack_size < 1:
+            raise ValueError("Item.stack_size muss >= 1 sein.")
+
+
+@dataclass
+class Recipe:
+    """
+    Repräsentiert ein Crafting-Rezept.
+    
+    Ein Rezept definiert, welche Rohstoffe (ingredients) benötigt werden,
+    um ein bestimmtes Ergebnis-Item (result) herzustellen.
+    """
+    id: str
+    name: str
+    result: Item
+    ingredients: Dict[str, int]  # {item_id: benötigte Menge}
+    required_level: int = 1
+    required_workbench: Optional[str] = None
+    crafting_time: float = 1.0  # in Sekunden
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        if not self.id or not isinstance(self.id, str):
+            raise ValueError("Recipe.id muss ein nicht-leerer String sein.")
+        if not self.name or not isinstance(self.name, str):
+            raise ValueError("Recipe.name muss ein nicht-leerer String sein.")
+        if not isinstance(self.result, Item):
+            raise ValueError("Recipe.result muss ein Item-Objekt sein.")
+        if not isinstance(self.ingredients, dict):
+            raise ValueError("Recipe.ingredients muss ein Dict sein.")
+        for item_id, amount in self.ingredients.items():
+            if not isinstance(item_id, str) or not item_id:
+                raise ValueError("Jeder Ingredient-Key muss ein nicht-leerer String sein.")
+            if not isinstance(amount, int) or amount < 1:
+                raise ValueError(f"Ingredient-Menge für '{item_id}' muss eine positive Ganzzahl sein.")
+        if self.required_level < 1:
+            raise ValueError("Recipe.required_level muss >= 1 sein.")
+        if self.crafting_time < 0:
+            raise ValueError("Recipe.crafting_time muss >= 0 sein.")
+
+    def can_craft(self, player_inventory: Dict[str, int], player_level: int = 1,
