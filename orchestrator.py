@@ -113,14 +113,14 @@ def main():
     for path in WORKSPACE_DIR.rglob("*.py"):
         rel_path = path.relative_to(WORKSPACE_DIR)
         content = path.read_text(encoding="utf-8")
-        if len(content) > 300:
-            content = content[:300] + "\n# ... [gekürzt] ..."
+        if len(content) > 200:
+            content = content[:200] + "\n# ... [gekürzt] ..."
         codebase_context += f"\n\n--- DATEI: {rel_path} ---\n{content}"
 
     prompt = f"""
-Du bist ein Senior Python Developer. Erweitere das Projekt für: {target_task}
+Erstelle kompakten Code für: {target_task}
 Schreibe den Code und passende Unit-Tests unter tests/.
-Verwende Markdown-Codeblöcke mit Dateinamen. Niemals modul.py bearbeiten!
+Verwende Codeblöcke mit Dateinamen. Niemals modul.py bearbeiten!
 """
 
     success = False
@@ -131,17 +131,17 @@ Verwende Markdown-Codeblöcke mit Dateinamen. Niemals modul.py bearbeiten!
 
         try:
             if attempt > 1:
-                print("⏳ Warte 15 Sekunden wegen Rate-Limit...")
-                time.sleep(15)
+                print("⏳ Warte 45 Sekunden, um das Groq Ratenlimit (1000 OTPM) einzuhalten...")
+                time.sleep(45)
 
-            # max_tokens auf 800 reduziert, um das Groq On-Demand Limit (1000 OTPM) einzuhalten!
+            # max_tokens auf 400 reduziert, um das Limit nicht zu überschreiten
             response = client.chat.completions.create(
                 model=MODEL_ID,
                 messages=[
                     {"role": "system", "content": "Du bist ein präziser Programmier-Assistent."},
                     {"role": "user", "content": prompt + (f"\n\nLETZTER FEHLER:\n{last_error}" if last_error else "")}
                 ],
-                max_tokens=800,
+                max_tokens=400,
                 temperature=0.2,
             )
 
