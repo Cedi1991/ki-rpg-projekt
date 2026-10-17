@@ -1,0 +1,32 @@
+```python
+"""
+src/audio.py
+
+A minimal procedural music generator for a dungeon game.
+The module exposes a single public function `generate_music` that
+creates a short sequence of note names based on the current
+player status and the threat level in the dungeon.
+
+The implementation is intentionally simple but deterministic,
+so that unit tests can reliably verify its behaviour.
+"""
+
+from __future__ import annotations
+
+from typing import Dict, List, Any
+
+__all__ = ["generate_music", "MusicGenerator", "get_last_sequence"]
+
+
+def _validate_inputs(player_status: Any, threat_level: Any) -> None:
+    """
+    Validate the inputs for `generate_music`.
+
+    Raises:
+        TypeError: If the types of the arguments are incorrect.
+        ValueError: If the threat level is negative.
+    """
+    if not isinstance(player_status, dict):
+        raise TypeError("player_status must be a dict")
+    if not isinstance(threat_level, int):
+        raise TypeError("threat
