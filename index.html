@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>KI-RPG | Selbstentwickelndes Spiel</title>
+<style>
+  body {
+    background: #020408;
+    color: #c9d1d9;
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+    padding: 6px;
+    margin: 0;
+    touch-action: none;
+  }
+  .container {
+    max-width: 700px;
+    margin: 0 auto;
+    border: 1px solid #21262d;
+    padding: 8px;
+    border-radius: 12px;
+    background: #0d1117;
+    box-shadow: 0 20px 40px rgba(0,0,0,.95);
+  }
+  h1 { color: #58a6ff; font-size: 1.1rem; margin: 2px 0 4px; text-shadow: 0 0 12px rgba(88,166,255,.6); }
+  .status {
+    font-size: .68rem; color: #3fb950; background: #161b22; padding: 4px 6px;
+    border-radius: 6px; border: 1px solid #30363d; margin-bottom: 4px; text-align: left; line-height: 1.3;
+  }
+  .status.error { color: #f85149; border-color: #f85149; }
+  #webgl-container {
+    width: 100%; height: 340px; border-radius: 8px; border: 1px solid #30363d;
+    margin: 4px 0; background: #04060b; position: relative; overflow: hidden;
+  }
+  #webgl-container canvas { display: block; width: 100%; height: 100%; }
+  .stats-box {
+    display: flex; justify-content: space-around; background: #161b22; padding: 5px;
+    border-radius: 6px; margin: 4px 0; border: 1px solid #30363d; font-weight: bold; font-size: .78rem;
+  }
+  .console {
+    background: #000205; color: #3fb950; border: 1px solid #30363d; padding: 5px;
+    height: 70px; overflow-y: auto; text-align: left; font-size: .66rem; border-radius: 6px;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <h1>⚔️ KI-RPG</h1>
+  <div class="status" id="status">Lade Spiel …</div>
+  <div id="webgl-container"></div>
+  <div class="stats-box">
+    <div>❤️ <span id="hp">100</span></div>
+    <div>🪙 <span id="gold">0</span></div>
+    <div>⭐ <span id="xp">0</span></div>
+    <div>🛡️ Lv <span id="level">1</span></div>
+  </div>
+  <div class="console" id="console"></div>
+</div>
+<script type="module" src="game/main.js"></script>
+</body>
+</html>
