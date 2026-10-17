@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>KI-RPG-Projekt | Autonome Live-Welt</title>
+    <title>KI-3D-RPG | Next-Gen Autonome Welt</title>
     <style>
         body {
-            background-color: #05070a;
+            background-color: #030508;
             color: #c9d1d9;
             font-family: 'Courier New', Courier, monospace;
             text-align: center;
-            padding: 10px;
+            padding: 8px;
             margin: 0;
             overflow: hidden;
             touch-action: none;
@@ -18,35 +18,39 @@
         .container {
             max-width: 700px;
             margin: 0 auto;
-            border: 2px solid #30363d;
-            padding: 12px;
-            border-radius: 12px;
+            border: 1px solid #30363d;
+            padding: 10px;
+            border-radius: 10px;
             background-color: #0d1117;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.9);
         }
         h1 {
             color: #58a6ff;
-            font-size: 1.4rem;
-            margin: 4px 0;
+            font-size: 1.2rem;
+            margin: 2px 0 6px 0;
+            text-shadow: 0 0 10px rgba(88,166,255,0.4);
         }
         .ai-status {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: #3fb950;
             background: #161b22;
-            padding: 4px;
-            border-radius: 4px;
+            padding: 5px;
+            border-radius: 6px;
             border: 1px solid #30363d;
             margin-bottom: 6px;
+            text-align: left;
+            line-height: 1.3;
         }
         #webgl-container {
             width: 100%;
-            height: 280px;
+            height: 300px;
             border-radius: 8px;
             border: 1px solid #30363d;
-            margin: 6px 0;
-            background: #020408;
+            margin: 4px 0;
+            background: #010306;
             position: relative;
             cursor: pointer;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
         }
         .stats-box {
             display: flex;
@@ -57,30 +61,30 @@
             margin: 6px 0;
             border: 1px solid #30363d;
             font-weight: bold;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
         }
         .console {
-            background: #020408;
+            background: #010306;
             color: #3fb950;
             border: 1px solid #30363d;
             padding: 6px;
-            height: 60px;
+            height: 50px;
             overflow-y: auto;
             text-align: left;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             border-radius: 6px;
         }
     </style>
-    <!-- Three.js -->
+    <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
     <div class="container">
-        <h1>⚔️ KI-3D-RPG: Autonomes Live-Netzwerk</h1>
-        <div class="ai-status" id="aiStatus">🤖 Autonomer Loop aktiv</div>
+        <h1>⚔️ KI-3D-RPG: Autonome Backend-Welt</h1>
+        <div class="ai-status" id="aiStatus">🤖 Verbinde mit Python-Backend & Modulen...</div>
         
-        <!-- 3D Canvas Viewport -->
+        <!-- Echtes 3D WebGL Viewport -->
         <div id="webgl-container"></div>
 
         <div class="stats-box">
@@ -90,90 +94,101 @@
         </div>
 
         <div class="console" id="console">
-            [System] 3D-Dungeon erfolgreich initialisiert.<br>
+            [System] 3D-Engine initialisiert. Tippe ins Bild, um den Ritter durch den Dungeon zu steuern.<br>
         </div>
     </div>
 
     <script>
-        // --- LIVE DATEN LADEN ---
-        async function loadRepositoryData() {
+        // --- 1. LIVE DATEN AUS DEM REPOSITORY LADEN ---
+        async function fetchAIState() {
             try {
-                const response = await fetch('world_state.json');
+                const response = await fetch('world_state.json?' + new Date().getTime());
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('aiStatus').innerText = `🤖 Modul aktiv: ${data.latest_module || 'Quantum Core'}`;
+                    const modulesStr = data.modules ? data.modules.join(', ').replace(/\*\*/g, '') : 'Core';
+                    document.getElementById('aiStatus').innerHTML = 
+                        `<b>🤖 Autopilot Status:</b> ${data.status.replace(/\*\*/g, '')}<br>` +
+                        `<b>📦 Aktive Backend-Module (${data.features_count}):</b> <span style="color: #58a6ff;">${modulesStr}</span>`;
+                } else {
+                    document.getElementById('aiStatus').innerHTML = "🤖 Autonomer Loop aktiv (Warte auf State-Sync)";
                 }
             } catch (e) {
-                // Fallback im Standby
+                document.getElementById('aiStatus').innerHTML = "🤖 Autonomer Loop aktiv (Standby)";
             }
         }
-        loadRepositoryData();
+        fetchAIState();
+        setInterval(fetchAIState, 15000);
 
-        // --- 3D SZENE & RITTER ---
+        // --- 2. NEXT-GEN 3D THREE.JS ENGINE ---
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x020408);
+        scene.fog = new THREE.FogExp2(0x020408, 0.08);
 
-        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(10, 12, 10);
+        const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 10, 9);
         camera.lookAt(0, 0, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0x1f2937, 0.8));
-        const neonLight = new THREE.PointLight(0x3fb950, 2, 15);
-        neonLight.position.set(0, 2, 0);
-        scene.add(neonLight);
+        // Lichtquellen für atmosphärisches Dungeon-Flair
+        const ambientLight = new THREE.AmbientLight(0x111927, 1.2);
+        scene.add(ambientLight);
 
-        // Boden & Grid
-        const floor = new THREE.Mesh(
-            new THREE.PlaneGeometry(10, 10),
-            new THREE.MeshStandardMaterial({ color: 0x11161d, roughness: 0.9 })
-        );
+        const pointLight = new THREE.PointLight(0x58a6ff, 2.5, 18);
+        pointLight.position.set(0, 4, 0);
+        scene.add(pointLight);
+
+        const fireLight = new THREE.PointLight(0xf85149, 2, 10);
+        fireLight.position.set(-3, 2, -3);
+        scene.add(fireLight);
+
+        // Dungeon Stein-Boden
+        const floorGeo = new THREE.PlaneGeometry(12, 12);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x0d1117, roughness: 0.9, metalness: 0.1 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
-        const gridHelper = new THREE.GridHelper(10, 10, 0x3fb950, 0x1a472a);
+        const gridHelper = new THREE.GridHelper(12, 12, 0x30363d, 0x161b22);
         gridHelper.position.y = 0.01;
         scene.add(gridHelper);
 
-        // Wände
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x1f242c, roughness: 0.8 });
+        // Immersive Dungeon-Wände (Echtes 3D)
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x161b22, roughness: 0.8 });
         
-        const backWall = new THREE.Mesh(new THREE.BoxGeometry(10, 5, 0.5), wallMat);
-        backWall.position.set(0, 2.5, -5);
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(12, 6, 0.6), wallMat);
+        backWall.position.set(0, 3, -6);
         scene.add(backWall);
 
-        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5, 10), wallMat);
-        leftWall.position.set(-5, 2.5, 0);
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 6, 12), wallMat);
+        leftWall.position.set(-6, 3, 0);
         scene.add(leftWall);
 
-        // Ritter Spielfigur
+        // --- 3. SPIELFIGUR (Ritter mit Rune) ---
         const playerGroup = new THREE.Group();
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x30363d, metalness: 0.8, roughness: 0.2 });
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0x21262d, metalness: 0.85, roughness: 0.2 });
         
-        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.4), bodyMat);
-        torso.position.y = 0.6;
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.35), armorMat);
+        torso.position.y = 0.55;
         playerGroup.add(torso);
 
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), bodyMat);
-        head.position.y = 1.1;
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), armorMat);
+        head.position.y = 1.0;
         playerGroup.add(head);
 
-        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.45), new THREE.MeshBasicMaterial({ color: 0x58a6ff }));
-        eye.position.set(0, 1.12, 0);
-        playerGroup.add(eye);
+        // Leuchtendes Visier
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.06, 0.4), new THREE.MeshBasicMaterial({ color: 0x58a6ff }));
+        visor.position.set(0, 1.02, 0);
+        playerGroup.add(visor);
 
-        const sword = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.2, 0.05), new THREE.MeshStandardMaterial({ color: 0x8b949e, metalness: 0.9 }));
-        sword.position.set(0.4, 0.6, 0.3);
-        sword.rotation.z = -0.3;
-        playerGroup.add(sword);
-
+        // Magischer Runen-Aura-Ring am Boden
         const auraRing = new THREE.Mesh(
-            new THREE.RingGeometry(0.6, 0.8, 32),
-            new THREE.MeshBasicMaterial({ color: 0x3fb950, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
+            new THREE.RingGeometry(0.5, 0.7, 32),
+            new THREE.MeshBasicMaterial({ color: 0x3fb950, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })
         );
         auraRing.rotation.x = -Math.PI / 2;
         auraRing.position.y = 0.02;
@@ -181,15 +196,14 @@
 
         scene.add(playerGroup);
 
-        // Schatz
-        const chest = new THREE.Mesh(
-            new THREE.BoxGeometry(0.8, 0.6, 0.6),
-            new THREE.MeshStandardMaterial({ color: 0x8957e5, roughness: 0.5 })
-        );
-        chest.position.set(3, 0.3, -3);
+        // --- 4. SCHATZ-TRUHE ---
+        const chestGeo = new THREE.BoxGeometry(0.7, 0.5, 0.5);
+        const chestMat = new THREE.MeshStandardMaterial({ color: 0x8957e5, roughness: 0.4, metalness: 0.5 });
+        const chest = new THREE.Mesh(chestGeo, chestMat);
+        chest.position.set(3, 0.25, -3);
         scene.add(chest);
 
-        // Touch & Klick Navigation
+        // --- 5. TOUCH & KLICK STEUERUNG ---
         let stats = { hp: 100, gold: 0, xp: 0 };
         let targetPosition = null;
         const raycaster = new THREE.Raycaster();
@@ -204,8 +218,8 @@
             const intersects = raycaster.intersectObject(floor);
             if (intersects.length > 0) {
                 targetPosition = intersects[0].point;
-                targetPosition.x = Math.max(-4.2, Math.min(4.2, targetPosition.x));
-                targetPosition.z = Math.max(-4.2, Math.min(4.2, targetPosition.z));
+                targetPosition.x = Math.max(-5, Math.min(5, targetPosition.x));
+                targetPosition.z = Math.max(-5, Math.min(5, targetPosition.z));
             }
         });
 
@@ -221,10 +235,11 @@
             document.getElementById('xp').innerText = stats.xp;
         }
 
+        // --- 6. RENDER-SCHLEIFE ---
         function animate() {
             requestAnimationFrame(animate);
 
-            let speed = 0.06;
+            let speed = 0.05;
             if (targetPosition) {
                 const dir = new THREE.Vector3().subVectors(targetPosition, playerGroup.position);
                 if (dir.length() > 0.1) {
@@ -237,14 +252,17 @@
                 }
             }
 
+            // Sanfte Animation für Ring & Licht
             auraRing.rotation.z += 0.02;
+            fireLight.intensity = 1.8 + Math.sin(Date.now() * 0.005) * 0.4;
 
-            if (playerGroup.position.distanceTo(chest.position) < 1.0) {
+            // Schatz-Kollision
+            if (playerGroup.position.distanceTo(chest.position) < 0.9) {
                 stats.gold += 50;
                 stats.xp += 100;
-                log("💎 Schatz eingesammelt! +50 Gold, +100 XP");
+                log("💎 Schatz aus dem Backend-Dungeon eingesammelt! +50 Gold");
                 updateUI();
-                chest.position.set((Math.random() - 0.5) * 6, 0.3, (Math.random() - 0.5) * 6);
+                chest.position.set((Math.random() - 0.5) * 8, 0.25, (Math.random() - 0.5) * 8);
                 targetPosition = null;
             }
 
