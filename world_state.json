@@ -1,10 +1,10 @@
 {
-    "latest_module": "src/audio.py`)**:",
+    "latest_module": "src/core.py",
     "features_count": 1,
     "modules": [
         "main.py"
     ],
-    "status": "Zuletzt implementiert: **Prozedurales Musik- und Sound-Generierungssystem (`src/audio.py`)**: Implementiere einen algorithmischen Sound-Generator, der basierend auf dem aktuellen Spielerstatus und der Bedrohung im Dungeon dynamisch epische orchestrale Musiksequenzen erzeugt.",
+    "status": "Zuletzt implementiert: **Erweitertes Manasystem & Elementar-Resonanz (`src/magic.py`)**: Implementiere ein tiefes Manasystem mit kombinierbaren Elementarzaubern (Feuer + Eis = Dampfexplosion), das direkt mit `src/combat.py` und `src/core.py` interagiert.",
     "visual_theme": {
         "wall_color": "#161b22",
         "light_color": "#58a6ff",
