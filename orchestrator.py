@@ -93,17 +93,33 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Detai
         print(f"⚠️ Konnte kein neues Epic-Task generieren: {e}")
 
 def export_world_state(target_file: str, target_task: str):
-    """Generiert die world_state.json im Root für die Live-Weboberfläche."""
+    """Generiert die world_state.json inklusive visueller KI-Parameter für das 3D-Frontend."""
     try:
         modules = [f.name for f in WORKSPACE_DIR.glob("*.py")]
+        
+        # Dynamische visuelle Parameter basierend auf den Modulen der KI
+        visual_theme = {
+            "wall_color": "#161b22",
+            "light_color": "#58a6ff",
+            "floor_color": "#0d1117",
+            "ambient_intensity": 1.2
+        }
+        
+        if "weather" in target_file.lower():
+            visual_theme["light_color"] = "#3fb950"  # Grünes Wetter-Licht
+        elif "graphics" in target_file.lower() or "engine" in target_file.lower() or "dungeon" in target_file.lower():
+            visual_theme["light_color"] = "#8957e5"  # Magisches Lila für Engine/Dungeon
+
         state = {
             "latest_module": target_file,
             "features_count": len(modules),
             "modules": modules,
-            "status": f"Zuletzt implementiert: {target_task}"
+            "status": f"Zuletzt implementiert: {target_task}",
+            "visual_theme": visual_theme
         }
+        
         Path("world_state.json").write_text(json.dumps(state, ensure_ascii=False, indent=4), encoding="utf-8")
-        print("🌍 world_state.json erfolgreich für die Weboberfläche aktualisiert!")
+        print("🌍 world_state.json inklusive visueller KI-Parameter aktualisiert!")
     except Exception as e:
         print(f"⚠️ Fehler beim Exportieren der world_state.json: {e}")
 
@@ -216,7 +232,7 @@ def main():
                 subprocess.run(["git", "add", "workspace/", "world_state.json"])
                 subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}' & aktualisiere World-State"])
 
-                # Automatischer Git-Push
+                # Automatischer Git-Push ins Repository
                 subprocess.run(["git", "push"], capture_output=True)
                 break
             else:
