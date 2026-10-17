@@ -19,6 +19,57 @@
 - [ ] **Komplexes Alchemie- und Handwerkssystem (`src/crafting.py`)**: Entwickle eine Multimaterial-Crafting-Engine mit Rezept-Entdeckungen, Qualitätsstufen (Legendär, Episch) und physikbasierten Attributen für Waffen und Tränke.
 - [ ] **Echtzeit-Netzwerk-Multiplayer-Protokoll (`src/multiplayer.py`)**: Baue ein Websocket-basiertes Synchronisationsprotokoll für mehrere Spieler im selben Dungeon inklusive Live-Chat und gemeinsamer Boss-Raids.
 - [ ] **Prozedurales Musik- und Sound-Generierungssystem (`src/audio.py`)**: Implementiere einen algorithmischen Sound-Generator, der basierend auf dem aktuellen Spielerstatus und der Bedrohung im Dungeon dynamisch epische orchestrale Musiksequenzen erzeugt.
+- [ ] **Erweitertes Manasystem & Elementar-Resonanz (`src/magic.py`)**: Implementiere ein tiefes Manasystem mit kombinierbaren Elementarzaubern (Feuer + Eis = Dampfexplosion), das direkt mit `src/combat.py` und `src/core.py` interagiert.
+- [ ] **Dynamisches Wettersystem & atmosphärischer Tag/Nacht-Zyklus (`src/weather.py`)**: Programmiere Wettereffekte wie Sturm, Nebel und Gewitter, die die Sichtweite im Dungeon, die Bewegung der Spieler und das Angriffsverhalten der Boss-KI beeinflussen.
+- [ ] **Fraktions- und Rufsystem (`src/factions.py`)**: Erstelle ein System für rivalisierende Gilden und Fraktionen, bei dem der Spieler durch Taten Rufpunkte sammelt, die Händlerpreise und NPC-Quests verändern.
+- [ ] **Fortgeschrittenes Alchemie- und Crafting-System (`src/crafting.py`)**: Entwickle eine Multimaterial-Crafting-Engine mit Rezept-Entdeckungen, Qualitätsstufen (Legendär, Episch) und physikbasierten Attributen für Ausrüstung.
+- [ ] **Echtzeit-Netzwerk-Multiplayer-Protokoll (`src/multiplayer.py`)**: Baue ein Websocket-basiertes Synchronisationsprotokoll für mehrere Spieler im selben Dungeon inklusive Live-Chat und gemeinsamer Boss-Raids.
+- [ ] **Prozedurale Musik- und Sound-Generierung (`src/audio.py`)**: Implementiere einen algorithmischen Sound-Generator, der basierend auf dem Spielerstatus und der Bedrohung im Dungeon epische Musiksequenzen erzeugt.
+- [ ] **Dynamisches Götter- und Glaubenssystem (`src/religion.py`)**: Implementiere ein Pantheon aus Göttern, die auf die Opfer und Taten des Spielers reagieren und entweder Segnungen oder verheerende Katastrophen auslösen.
+- [ ] **Prozedurale Quest- und Story-Generierung per LLM (`src/storygen.py`)**: Entwickle ein System, das basierend auf den vergangenen Abenteuern des Spielers individuelle, fortlaufende Hauptgeschichten und Nebenquests erzeugt.
+- [ ] **Erweitertes Physik- und Zerstörungssystem (`src/physics.py`)**: Programmiere eine Umgebungssimulation, bei der Wände, Säulen und Brücken im Dungeon durch Zauber realinisch einstürzen und neue Wege freilegen.
+- [ ] **Intelligentes Begleiter- und Söldnersystem (`src/companions.py`)**: Erstelle steuerbare NPC-Gefährten mit eigener KI, individuellem Inventar, Beziehungsstatus und klassenbasierten Synergien für den Kampf.
+- [ ] **Magisches Portal- und Dimensions-Reisesystem (`src/dimensions.py`)**: Implementiere multidimensionale Risse, die den Spieler in völlig andersartige, prozedural generierte Welten mit einzigartigen physikalischen Regeln teleportieren.
+- [ ] **Tiefgehendes Diebstahl- und Schleichsystem (`src/stealth.py`)**: Programmiere Schattenzonen, Sichtkegel für Gegner, Taschendiebstahl-Mechaniken und Alarmsysteme für geräuschvolles Vorgehen.
+- [ ] **Dynamisches Reittier- und Transport-System (`src/mounts.py`)**: Füge zähmbare Reittiere (Kreaturen, Drachen, mechanische Läufer) mit eigenen Attributen, Geschwindigkeitsboni und Kampf-Fähigkeiten hinzu.
+- [ ] **Markt- und Wirtschaftssimulation mit Angebot & Nachfrage (`src/economy_sim.py`)**: Erstelle eine lebendige Ökonomie, in der die Aktionen des Spielers (z. B. Massenverkauf von Ressourcen) die lokalen Marktpreise in Städten drastisch schwanken lassen.
+- [ ] **Fortgeschrittenes Beute- und Attributs-Affix-System (`src/loot.py`)**: Entwickle einen algorithmischen Loot-Generator, der Waffen und Rüstungen mit zufälligen, seltenen magischen Affixen und Set-Boni versieht.
+- [ ] **Dynamisches Krankheits- und Verletzungssystem (`src/health_status.py`)**: Implementiere realistische Statuseffekte wie Vergiftung, Knochenbrüche oder Erfrierungen, die spezielle Heilmittel und Behandlungen erfordern.
+- [ ] **Interaktives Siedlungs- und Burgenbau-System (`src/settlement.py`)**: Erlaube dem Spieler, eigene Stützpunkte im Dungeon oder an der Oberfläche zu errichten, zu verteidigen und NPCs als Arbeiter anzuheuern.
+- [ ] **Erweitertes Fallen- und Rätsel-Architektur-Modul (`src/puzzles.py`)**: Programmiere prozedural generierbare Logikrätsel, Druckplatten, Laserbarrieren und Kombinationsschlösser für verlassene Ruinen.
+- [ ] **Rechtssystem und Gefängnis-Mechanik (`src/justice.py`)**: Verfolge illegale Handlungen (Angriffe auf NPCs, Diebstahl) mit Steckbriefen, Kopfgeldern und spielbaren Ausbruchs-Szenarien aus Verliesen.
+- [ ] **Kollaboratives Gilden- und Festungs-Kriegssystem (`src/guild_wars.py`)**: Implementiere Mechaniken für Spieler-Allianzen, um Territorien zu erobern, Ressourcen zu sichern und feindliche Festungen zu belagern.
+- [ ] **Titel- und Errungenschafts-System (`src/achievements.py`)**: Erstelle ein dynamisches Statistik-Tracking, das besondere Heldentaten mit einzigartigen Titeln, kosmetischen Effekten und permanenten Attributs-Boni belohnt.
+- [ ] **Fortgeschrittene K.I.-Schwarmintelligenz für Monster (`src/swarm_ai.py`)**: Entwickle taktisches Gruppenverhalten für Gegner, bei dem Monster Flankenangriffe starten, Verwundete schützen und auf Spieler-Strategien reagieren.
+- [ ] **Tagesablauf- und Routine-Simulation für NPCs (`src/npc_routine.py`)**: Programmiere realistische Zyklen für NPCs (Schlafen, Arbeiten in Tavernen, Marktplatzbesuche), wodurch Städte organisch und lebendig wirken.
+- [ ] **Dynamisches Angel- und Überlebens-Minispiel (`src/survival.py`)**: Integriere Nahrungs- und Wassermodulationen, Lagerfeuer-Mechaniken und ein prozedurales Angelsystem an unterirdischen Seen.
+- [ ] **Fortschrittliches Rüstungs- und Waffen-Abnutzungssystem (`src/durability.py`)**: Implementiere Verschleißerscheinungen im Kampf, die regelmäßige Reparaturen an Ambossen oder durch Handwerker notwendig machen.
+- [ ] **Barden- und Musikanten-System (`src/bards.py`)**: Erlaube dem Spieler, auf Instrumenten zu spielen, um NPCs zu unterhalten, Tavernen-Buffs zu erhalten oder feindliche Kreaturen temporär zu beschwichtigen.
+- [ ] **Toxizitäts- und Fluch-System für Artefakte (`src/curses.py`)**: Füge mächtige, aber verfluchte Relikte hinzu, die massive Macht verleihen, aber gleichzeitig negative Langzeiteffekte auf den Träger ausüben.
+- [ ] **Interaktives Buch- und Bibliotheks-System (`src/library.py`)**: Programmiere lesbare Folianten, historische Schriften und Geheimkarten im Spiel, die verborgene Lore oder geheime Dungeon-Eingänge enthüllen.
+- [ ] **Dynamisches Ruf- und Mentoren-System (`src/mentors.py`)**: Ermöglicht dem Spieler, bei legendären Meistern in die Lehre zu gehen, um exklusive, geheime Kampftechniken und Zauber freizuschalten.
+- [ ] **Modulares Fahrzeug- und Karawanen-System (`src/vehicles.py`)**: Erstelle steuerbare Transportmittel für den Ressourcen-Handel über gefährliche, offene Weltkarten-Zonen hinweg.
+- [ ] **Erweiterter Foto-Modus und Cinematics-Engine (`src/photomode.py`)**: Entwickle einen Kamera-Modus mit Tiefenschärfe, Filtern und frei steuerbaren Winkeln, um epische Dungeon-Momente festzuhalten.
+- [ ] **Dynamisches Jahreszeiten- und Ernte-System (`src/seasons.py`)**: Simuliere den Wechsel von Frühling, Sommer, Herbst und Winter, was die Verfügbarkeit von Kräutern, Pflanzen und Rohstoffen direkt verändert.
+- [ ] **Auktionshaus- und Handelsnetzwerk-Modul (`src/auction_house.py`)**: Programmiere ein zentrales Handelsregister, über das Spieler NPCs oder andere Spieler auf globalen Märkten mit Gütern versorgen können.
+- [ ] **Erweitertes Schmuck- und Edelstein-Sockelungs-System (`src/sockets.py`)**: Implementiere Mechaniken, um Rüstungen und Waffen mit geschliffenen Edelsteinen zu versehen und deren Attribute individuell zu maximieren.
+- [ ] **Geheime Boss-Raid-Karten und Arena-Modus (`src/arena.py`)**: Erstelle prozedurale Überlebens-Arenen, in denen Endlos-Wellen von Monstern und epische Boss-Kombinationen für Bestenlisten bekämpft werden.
+- [ ] **Detailliertes Koch- und Bankett-System (`src/cooking.py`)**: Entwickle eine Küche, in der gefundene Zutaten zu nahrhaften Gerichten verarbeitet werden, die temporäre Buffs für Gesundheit und Mana gewähren.
+- [ ] **Schatten- und Tarnkappen-Mechanik mit Lichtquellen (`src/lighting_stealth.py`)**: Verknüpfe die Taschenlampe und Fackeln des Spielers direkt mit der Entdeckungswahrscheinlichkeit durch Wachen in dunklen Dungeons.
+- [ ] **Prozedurale Karten- und Kartografierungs-Tools (`src/cartography.py`)**: Erlaube dem Spieler, unerforschte Dungeons selbst zu kartografieren, Notizen auf der Karte zu hinterlassen und diese an Händler zu verkaufen.
+- [ ] **Erweitertes Seelen- und Reinkarnations-System (`src/reincarnation.py`)**: Implementiere einen "New Game Plus"-Modus mit spirituellem Fortschritt, bei dem der Charakter nach dem Ableben mit geerbten Kräften neu startet.
+- [ ] **Dynamisches Diplomatie- und Bündnis-System für Königreiche (`src/diplomacy.py`)**: Simuliere politische Beziehungen zwischen Fraktionen, die durch Spielerentscheidungen in Kriege oder Friedenszeiten umschlagen können.
+- [ ] **Gedankenklese- und Verhör-System für NPCs (`src/mindread.py`)**: Füge magische Fähigkeiten hinzu, um die wahren Absichten und versteckten Schatztruhen-Geheimnisse von NPCs im Dialog zu erfahren.
+- [ ] **Episches Siegel- und Runen-Magiesystem (`src/runes.py`)**: Programmiere magische Runenkreise, die auf dem Boden platziert werden, um Fallen zu stellen oder Portale zu stabilisieren.
+- [ ] **Tribut- und Steuer-System für eroberte Gebiete (`src/tributes.py`)**: Erlaube dem Spieler, als Herrscher über Regionen regelmäßige Steuereinnahmen und Ressourcen-Lieferungen einzutreiben.
+- [ ] **Erweitertes Begräbnis- und Ahnen-System (`src/ancestors.py`)**: Erstelle Grabstätten, in denen gefallene Helden geehrt werden und durch Ahnen-Geister passive Boni für Nachfahren freigeschaltet werden.
+- [ ] **Mutations- und Genetik-Labor für Kreaturen (`src/creature_lab.py`)**: Ermögliche Spielern, gefangene Monster zu kreuzen und genetisch anzupassen, um einzigartige Reittiere oder Wächter zu züchten.
+- [ ] **Tavernen- und Glücksspiel-Minispiele (`src/minigames.py`)**: Integriere spielbare Würfelspiele, Kartenspiele und Wetten in Tavernen, um schnell Gold zu verdienen oder zu verlieren.
+- [ ] **Fortschrittliche Wetter- und Katastrophen-Warnsysteme (`src/disasters.py`)**: Programmiere Naturereignisse wie Erdbeben oder Vulkanausbrüche, die ganze Dungeon-Sektoren versperren oder verändern.
+- [ ] **Dynamisches Sprach- und Dialekt-System (`src/languages.py`)**: Führe vergessene Sprachen und Hieroglyphen ein, die erst durch das Finden von Sprach-Büchern und Artefakten im Spiel entschlüsselt werden können.
+- [ ] **Modulares Event- und Festival-System (`src/festivals.py`)**: Simuliere zeitgesteuerte Feierlichkeiten in Spielwelt-Städten mit einzigartigen Händlern, Quests und Belohnungen.
+- [ ] **Die ultimative Welten-Singularität & KI-Endboss (`src/singularity.py`)**: Entwickle das finale Endgame-Modul, in dem der Haupt-Antagonist vom LLM in Echtzeit gesteuert wird und sich dynamisch an jede Taktik des Spielers anpasst.
+
 
 
 
