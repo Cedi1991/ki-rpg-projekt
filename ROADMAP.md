@@ -4,9 +4,10 @@ Format pro Zeile: `- [ ] modul-id | Titel | Beschreibung` (`[x]` erledigt, `[!]`
 Die KI bearbeitet immer die oberste offene Aufgabe und baut sie als `game/modules/<modul-id>.js`.
 Du kannst jederzeit eigene Aufgaben ergänzen oder die Reihenfolge ändern.
 
-- [ ] weather | Regen und Nebel | Wechselnde Wetterphasen: Regentropfen als Partikel (THREE.Points) und eine Nebeldichte, die sich langsam ändert (scene.fog.density). Bei Sturm sinkt ctx.player.speedMul auf 0.85, danach wieder 1.
+- [x] weather | Regen und Nebel | Wechselnde Wetterphasen: Regentropfen als Partikel (THREE.Points) und eine Nebeldichte, die sich langsam ändert (scene.fog.density). Bei Sturm sinkt ctx.player.speedMul auf 0.85, danach wieder 1.
 - [ ] boss | Boss-Gegner | Sobald der Spieler Level 3 erreicht, erscheint einmalig ein großer Boss (viel HP, langsam, hoher Schaden) mit einer HP-Leiste über dem Kopf. Sieg gibt viel XP und Gold.
 - [ ] minimap | Minimap | Eine kleine 2D-Karte (Canvas, oben rechts im Spielfeld-Container eingeblendet) zeigt Spieler, Gegner, Truhen und Kristalle als Punkte.
 - [ ] savegame | Spielstand speichern | Gold, XP, Level und Max-HP werden alle 5 Sekunden in localStorage (Schlüssel kirpg_save) gespeichert und beim Start geladen.
 - [ ] floating-text | Schadenszahlen | Beim Treffer erscheinen kurz aufsteigende Zahlen (Sprites) über Gegnern und Spieler, die nach einer Sekunde verschwinden.
 - [ ] torches | Fackeln und Licht | Mehrere flackernde Punktlichter (THREE.PointLight) an den Wänden, die atmosphärisch pulsieren, mit maximal 4 Lichtern wegen Handy-Leistung.
+- [ ] traps | Fallen | Fügt dem Spiel zufällige Bodenfallen hinzu, die beim Betreten durch Spieler oder Gegner Schaden oder Status‑Effekte auslösen und durch kleine Partikeleffekte sichtbar gemacht werden.

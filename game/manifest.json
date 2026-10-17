@@ -1,4 +1,13 @@
 {
-  "version": 1,
-  "modules": ["world", "player", "enemies", "combat", "loot", "survival", "hud"]
+  "version": 1792281024,
+  "modules": [
+    "world",
+    "player",
+    "enemies",
+    "combat",
+    "loot",
+    "survival",
+    "hud",
+    "weather"
+  ]
 }
