@@ -12,7 +12,7 @@
 
 - [x] **Erweiterte Magie-Effekte (`src/magic.py`)**: Implementiere ein Manasystem mit Elementarzaubern und Flächenschaden, das direkt mit `src/combat.py` und `src/core.py` interagiert.
 - [x] **Dynamisches Wettersystem (`src/weather.py`)**: Programmiere Wettereffekte wie Sturm und Nebel, die die Sichtweite im Dungeon und die Boss-KI beeinflussen.
-- [ ] **Erstelle die spielbare Web-Oberfläche (`index.html`)**: Programmiere eine moderne, in sich geschlossene `index.html` direkt im Hauptverzeichnis des Repositories. Sie soll ein futuristisches 3D-Canvas-Design (mit Three.js oder Canvas), eine Live-Anzeige der RPG-Stats (Spieler, Inventar, Dungeons) und interaktive Aktions-Buttons enthalten, damit das Spiel sofort auf der GitHub-Pages-URL erlebbar ist.
+- [x] **Erstelle die spielbare Web-Oberfläche (`index.html`)**: Programmiere eine moderne, in sich geschlossene `index.html` direkt im Hauptverzeichnis des Repositories. Sie soll ein futuristisches 3D-Canvas-Design (mit Three.js oder Canvas), eine Live-Anzeige der RPG-Stats (Spieler, Inventar, Dungeons) und interaktive Aktions-Buttons enthalten, damit das Spiel sofort auf der GitHub-Pages-URL erlebbar ist.
 - [ ] **Fraktions- und Rufsystem (`src/factions.py`)**: Erstelle ein System für NPC-Gilden und Fraktionen mit Rufpunkten und Händler-Rabatten.
 - [ ] **Echtzeit-Wettersystem & Dynamischer Tag/Nacht-Zyklus (`src/weather.py`)**: Implementiere ein dynamisches Wettersystem (Regen, Sturm, Nebel), das die Sichtweite im Dungeon, die Bewegungsgeschwindigkeit des Spielers und das Angriffsverhalten von Boss-Gegnern in Echtzeit beeinflusst.
 - [ ] **Künstliche Intelligenz für lebendige NPCs mit Gedächtnis (`src/npc_ai.py`)**: Programmiere ein verhaltensbasiertes NPC-System, bei dem Charaktere sich an frühere Interaktionen und Diebstähle des Spielers erinnern und basierend darauf Handelspreise oder Quests anpassen.
@@ -70,7 +70,4 @@
 - [ ] **Dynamisches Sprach- und Dialekt-System (`src/languages.py`)**: Führe vergessene Sprachen und Hieroglyphen ein, die erst durch das Finden von Sprach-Büchern und Artefakten im Spiel entschlüsselt werden können.
 - [ ] **Modulares Event- und Festival-System (`src/festivals.py`)**: Simuliere zeitgesteuerte Feierlichkeiten in Spielwelt-Städten mit einzigartigen Händlern, Quests und Belohnungen.
 - [ ] **Die ultimative Welten-Singularität & KI-Endboss (`src/singularity.py`)**: Entwickle das finale Endgame-Modul, in dem der Haupt-Antagonist vom LLM in Echtzeit gesteuert wird und sich dynamisch an jede Taktik des Spielers anpasst.
-
-
-
-
+- [ ] **Quanten-Realitätsverflochtung & Paradoxe Zeitlinien-Simulation (`src/quantum_reality.py`)**: Implementiere ein bahnbrechendes Physik-Modul, das es dem Spieler ermöglicht, durch hochkomplexe Runen-Formeln die lokale Kausalität und Zeitflussrichtung in Dungeons zu verzerren. Dies erzeugt persistenten "Temporalen Scherben" (Time Shards) in der Welt: Spieler können ihre eigenen zukünftigen Handlungen als physische Projektionen in der Gegenwart anbringen, Bewusstseins-Clone aufteilen, um gleichzeitig zwei Enden einer Burg zu sein, oder den Tod temporär zurückzudrehen, indem sie einen "Paradoxon-Loop" starten. Das System nutzt deterministische Zustandsspeicher-Snapshots, die mit der `src/singularity.py`-KI interagieren, sodass der Endboss erkennt, ob der Spieler die Zeit manipuliert hat
