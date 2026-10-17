@@ -1,14 +1,50 @@
 {
-    "latest_module": "src/core.py",
+    "latest_module": "src/weather.py`)**:",
     "features_count": 1,
     "modules": [
         "main.py"
     ],
-    "status": "Zuletzt implementiert: **Erweitertes Manasystem & Elementar-Resonanz (`src/magic.py`)**: Implementiere ein tiefes Manasystem mit kombinierbaren Elementarzaubern (Feuer + Eis = Dampfexplosion), das direkt mit `src/combat.py` und `src/core.py` interagiert.",
+    "status": "Zuletzt implementiert: **Dynamisches Wettersystem & atmosphärischer Tag/Nacht-Zyklus (`src/weather.py`)**: Programmiere Wettereffekte wie Sturm, Nebel und Gewitter, die die Sichtweite im Dungeon, die Bewegung der Spieler und das Angriffsverhalten der Boss-KI beeinflussen.",
     "visual_theme": {
-        "wall_color": "#161b22",
-        "light_color": "#58a6ff",
-        "floor_color": "#0d1117",
-        "ambient_intensity": 1.2
-    }
+        "wall_color": "#1e293b",
+        "light_color": "#3fb950",
+        "floor_color": "#0f172a",
+        "ambient_intensity": 2.0
+    },
+    "dungeon_objects": [
+        {
+            "type": "chest",
+            "x": 3.5,
+            "z": -3.5,
+            "loot": "50 Gold"
+        },
+        {
+            "type": "chest",
+            "x": -3.5,
+            "z": 2.5,
+            "loot": "Magischer Ring"
+        },
+        {
+            "type": "crystal",
+            "x": 4.0,
+            "z": -5.0,
+            "color": "green"
+        },
+        {
+            "type": "crystal",
+            "x": -4.0,
+            "z": -4.0,
+            "color": "blue"
+        },
+        {
+            "type": "barrel",
+            "x": -4.5,
+            "z": -2.0
+        },
+        {
+            "type": "torch",
+            "x": 0.0,
+            "z": -5.8
+        }
+    ]
 }
