@@ -3,64 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KI-RPG-Projekt | Autonome Welt-Evolution</title>
+    <title>KI-RPG-Projekt | Spielbare Web-Version</title>
     <style>
         body {
             background-color: #0d1117;
             color: #c9d1d9;
             font-family: 'Courier New', Courier, monospace;
             text-align: center;
-            padding: 50px 20px;
+            padding: 20px;
             margin: 0;
         }
         .container {
-            max-width: 800px;
+            max-width: 600px;
             margin: 0 auto;
             border: 2px solid #30363d;
-            padding: 40px;
+            padding: 20px;
             border-radius: 12px;
             background-color: #161b22;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         h1 {
             color: #58a6ff;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2rem;
+            margin-bottom: 5px;
         }
-        p {
-            font-size: 1.1rem;
-            line-height: 1.6;
-        }
-        .badge {
-            display: inline-block;
-            background: #238636;
-            color: white;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-        .features {
-            text-align: left;
+        .stats-box {
+            display: flex;
+            justify-content: space-around;
             background: #0d1117;
-            padding: 20px;
+            padding: 10px;
             border-radius: 8px;
-            margin-top: 20px;
+            margin: 15px 0;
             border: 1px solid #30363d;
+            font-weight: bold;
         }
-        .features ul {
-            margin: 0;
-            padding-left: 20px;
+        .console {
+            background: #010409;
+            color: #7ee787;
+            border: 1px solid #30363d;
+            padding: 15px;
+            height: 150px;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            margin-bottom: 15px;
         }
-        .features li {
-            margin-bottom: 8px;
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
-        a {
-            color: #58a6ff;
-            text-decoration: none;
+        button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
         }
-        a:hover {
-            text-decoration: underline;
+        button:hover {
+            background-color: #2ea043;
+        }
+        button.secondary {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+        }
+        button.secondary:hover {
+            background-color: #30363d;
         }
     </style>
 </head>
@@ -68,25 +82,101 @@
 
     <div class="container">
         <h1>⚔️ KI-RPG-Projekt</h1>
-        <p>Das weltweit erste autonome, KI-gesteuerte 3D-Rollenspiel, das sich über GitHub Actions und LLMs permanent selbst erweitert.</p>
+        <p style="font-size: 0.9rem; color: #8b949e;">Autonomes Browser-Abenteuer</p>
         
-        <div class="badge">🟢 System Status: Autonomer Loop aktiv</div>
-
-        <div class="features">
-            <h3>🚀 Aktuelle High-End-Features im System:</h3>
-            <ul>
-                <li><strong>Quanten-Realitätsverflochtung & Paradoxe Zeitlinien</strong> (`src/quantum_reality.py`)</li>
-                <li><strong>Adaptive Multiversal Simulation Engine</strong> (`src/multiversal_engine.py`)</li>
-                <li><strong>Neuro-Semantische Welt-Resonanz</strong> (`src/neural_world.py`)</li>
-                <li>Prozedurale Dungeon-Generierung, KI-Kämpfe & automatisierte pytest-Sicherung.</li>
-            </ul>
+        <div class="stats-box">
+            <div>❤️ HP: <span id="hp">100</span>/<span id="maxHp">100</span></div>
+            <div>🪙 Gold: <span id="gold">0</span></div>
+            <div>⭐ XP: <span id="xp">0</span></div>
         </div>
 
-        <p style="margin-top: 30px; font-size: 0.9rem;">
-            Quellcode & Entwicklung verfolgen: <br>
-            <a href="https://github.com/Cedi1991/ki-rpg-projekt" target="_blank">GitHub Repository Cedi1991/ki-rpg-projekt</a>
-        </p>
+        <div class="console" id="console">
+            [System] Willkommen in der autonomen Spielwelt! Wähle eine Aktion, um dein Abenteuer zu starten...<br>
+        </div>
+
+        <div class="btn-grid">
+            <button onclick="exploreDungeon()">🗺️ Dungeon erkunden</button>
+            <button onclick="restAtCamp()" class="secondary">⛺ Am Lager ruhen</button>
+            <button onclick="craftItem()" class="secondary">⚒️ Gegenstand schmieden</button>
+            <button onclick="resetGame()" style="background-color: #da3633;">🔄 Neustart</button>
+        </div>
     </div>
 
+    <script>
+        let player = {
+            hp: 100,
+            maxHp: 100,
+            gold: 10,
+            xp: 0
+        };
+
+        function log(message) {
+            const consoleBox = document.getElementById('console');
+            consoleBox.innerHTML += `> ${message}<br>`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('hp').innerText = player.hp;
+            document.getElementById('maxHp').innerText = player.maxHp;
+            document.getElementById('gold').innerText = player.gold;
+            document.getElementById('xp').innerText = player.xp;
+        }
+
+        function exploreDungeon() {
+            const events = [
+                { text: "Du hast einen Goblin im modrigen Korridor besiegt!", gold: 15, xp: 20, damage: 15 },
+                { text: "Eine finstere Grabkammer! Du findest verstaubte Schätze.", gold: 30, xp: 40, damage: 25 },
+                { text: "Eine Falle schnappt zu! Du nimmst Schaden, findest aber Beute.", gold: 10, xp: 10, damage: 30 },
+                { text: "Der Raum ist leer. Nur das Echo deiner Schritte hallt wider.", gold: 5, xp: 5, damage: 5 }
+            ];
+            
+            const event = events[Math.floor(Math.random() * events.length)];
+            player.hp -= event.damage;
+            player.gold += event.gold;
+            player.xp += event.xp;
+
+            log(event.text);
+            log(`Ereignis: -${event.damage} HP, +${event.gold} Gold, +${event.xp} XP`);
+
+            if (player.hp <= 0) {
+                player.hp = 0;
+                log("💀 Du wurdest besiegt! Das Lagerfeuer ruft...");
+                alert("Du wurdest im Dungeon besiegt! Deine Reise beginnt von vorn.");
+                resetGame();
+                return;
+            }
+            updateStats();
+        }
+
+        function restAtCamp() {
+            if (player.gold >= 5) {
+                player.gold -= 5;
+                player.hp = Math.min(player.maxHp, player.hp + 40);
+                log("⛺ Am Lagerfeuer ausgeruht. HP regeneriert (-5 Gold).");
+            } else {
+                log("❌ Nicht genug Gold für die Rast (kostet 5 Gold).");
+            }
+            updateStats();
+        }
+
+        function craftItem() {
+            if (player.gold >= 20) {
+                player.gold -= 20;
+                player.maxHp += 20;
+                player.hp = player.maxHp;
+                log("⚒️ Du hast legendäre Ausrüstung geschmiedet! Max HP erhöht.");
+            } else {
+                log("❌ Du brauchst 20 Gold, um Ausrüstung zu schmieden.");
+            }
+            updateStats();
+        }
+
+        function resetGame() {
+            player = { hp: 100, maxHp: 100, gold: 10, xp: 0 };
+            document.getElementById('console').innerHTML = "[System] Spielstand zurückgesetzt.<br>";
+            updateStats();
+        }
+    </script>
 </body>
 </html>
