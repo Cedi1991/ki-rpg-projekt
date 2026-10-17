@@ -10,5 +10,8 @@
 ## Geplant (Offene Aufgaben)
 
 
-- [ ] plane nach jedem todo dein nächstes todo um niemals leer zu laufen, denke immer größer und werde einzigartig 
+- [ ] **Erweiterte Magie-Effekte (`src/magic.py`)**: Implementiere ein Manasystem mit Elementarzaubern und Flächenschaden, das direkt mit `src/combat.py` und `src/core.py` interagiert.
+- [ ] **Dynamisches Wettersystem (`src/weather.py`)**: Programmiere Wettereffekte wie Sturm und Nebel, die die Sichtweite im Dungeon und die Boss-KI beeinflussen.
+- [ ] **Fraktions- und Rufsystem (`src/factions.py`)**: Erstelle ein System für NPC-Gilden und Fraktionen mit Rufpunkten und Händler-Rabatten.
+
 
