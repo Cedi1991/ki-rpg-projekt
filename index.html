@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KI-RPG-Projekt | 3D Web-Version</title>
+    <title>KI-RPG-Projekt | 3D-Steuerbare Welt</title>
     <style>
         body {
             background-color: #0d1117;
@@ -12,10 +12,10 @@
             text-align: center;
             padding: 10px;
             margin: 0;
-            overflow-x: hidden;
+            overflow: hidden;
         }
         .container {
-            max-width: 650px;
+            max-width: 700px;
             margin: 0 auto;
             border: 2px solid #30363d;
             padding: 15px;
@@ -25,16 +25,22 @@
         }
         h1 {
             color: #58a6ff;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             margin: 5px 0;
         }
         #webgl-container {
             width: 100%;
-            height: 220px;
+            height: 280px;
             border-radius: 8px;
             border: 1px solid #30363d;
             margin: 10px 0;
             background: #010409;
+            position: relative;
+        }
+        .controls-hint {
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-bottom: 8px;
         }
         .stats-box {
             display: flex;
@@ -42,207 +48,149 @@
             background: #0d1117;
             padding: 8px;
             border-radius: 8px;
-            margin: 10px 0;
+            margin: 8px 0;
             border: 1px solid #30363d;
             font-weight: bold;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
         .console {
             background: #010409;
             color: #7ee787;
             border: 1px solid #30363d;
-            padding: 10px;
-            height: 100px;
+            padding: 8px;
+            height: 80px;
             overflow-y: auto;
             text-align: left;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             border-radius: 8px;
-            margin-bottom: 10px;
-        }
-        .btn-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        button {
-            background-color: #238636;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 6px;
-            font-family: 'Courier New', Courier, monospace;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        button:hover {
-            background-color: #2ea043;
-        }
-        button.secondary {
-            background-color: #21262d;
-            border: 1px solid #30363d;
-            color: #c9d1d9;
-        }
-        button.secondary:hover {
-            background-color: #30363d;
+            margin-bottom: 8px;
         }
     </style>
-    <!-- Three.js für echte 3D-Grafik im Browser -->
+    <!-- Three.js für die 3D-Grafik -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
     <div class="container">
-        <h1>⚔️ KI-3D-RPG</h1>
+        <h1>⚔️ KI-3D-RPG: Steuerbarer Held</h1>
+        <div class="controls-hint">🎮 Steuerung: Benutze die <b>Pfeiltasten</b> oder <b>W, A, S, D</b>, um die Spielfigur im 3D-Dungeon zu bewegen!</div>
         
         <!-- 3D Canvas Viewport -->
         <div id="webgl-container"></div>
 
         <div class="stats-box">
-            <div>❤️ HP: <span id="hp">100</span>/<span id="maxHp">100</span></div>
-            <div>🪙 Gold: <span id="gold">10</span></div>
+            <div>❤️ HP: <span id="hp">100</span></div>
+            <div>🪙 Gold: <span id="gold">0</span></div>
             <div>⭐ XP: <span id="xp">0</span></div>
         </div>
 
         <div class="console" id="console">
-            [System] 3D-Engine initialisiert. Willkommen in der autonomen Welt!<br>
-        </div>
-
-        <div class="btn-grid">
-            <button onclick="exploreDungeon()">🗺️ Dungeon erkunden</button>
-            <button onclick="restAtCamp()" class="secondary">⛺ Am Lager ruhen</button>
-            <button onclick="craftItem()" class="secondary">⚒️ Ausrüstung schmieden</button>
-            <button onclick="resetGame()" style="background-color: #da3633;">🔄 Neustart</button>
+            [System] 3D-Welt geladen. Steuere deinen Helden durch den Dungeon!<br>
         </div>
     </div>
 
     <script>
-        // --- THREE.JS 3D SZENE ---
+        // --- 3D SZENE INITIALISIERUNG ---
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x05070a);
+
         const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
 
-        // Lichtquellen
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // Licht
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0x58a6ff, 1.5, 50);
-        pointLight.position.set(5, 5, 5);
+        const pointLight = new THREE.PointLight(0x58a6ff, 2, 50);
+        pointLight.position.set(0, 10, 0);
         scene.add(pointLight);
 
-        // 3D-Objekt (Spieler / Magischer Kristall in der 3D-Welt)
-        const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-        const material = new THREE.MeshStandardMaterial({ 
-            color: 0x238636, 
-            roughness: 0.3, 
-            metalness: 0.8 
-        });
-        const playerMesh = new THREE.Mesh(geometry, material);
-        scene.add(playerMesh);
+        // Bodenplatte (Dungeon-Raum)
+        const floorGeo = new THREE.PlaneGeometry(20, 20);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x161b22, roughness: 0.9 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
 
-        // Ein paar 3D-Dungeon-Säulen im Hintergrund
-        const pillars = [];
-        for (let i = 0; i < 4; i++) {
-            const pGeo = new THREE.CylinderGeometry(0.3, 0.3, 3, 8);
-            const pMat = new THREE.MeshStandardMaterial({ color: 303030 });
-            const pillar = new THREE.Mesh(pGeo, pMat);
-            const angle = (i / 4) * Math.PI * 2;
-            pillar.position.set(Math.cos(angle) * 4, 0, Math.sin(angle) * 4);
-            scene.add(pillar);
-            pillars.push(pillar);
+        // Spielfigur (Helden-Würfel)
+        const playerGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0x238636, metalness: 0.5 });
+        const player = new THREE.Mesh(playerGeo, playerMat);
+        player.position.y = 0.4;
+        scene.add(player);
+
+        // Sammelbarer Schatz (Goldkristall)
+        const gemGeo = new THREE.OctahedronGeometry(0.4);
+        const gemMat = new THREE.MeshStandardMaterial({ color: 0xd29922, emissive: 0x6e4002 });
+        const gem = new THREE.Mesh(gemGeo, gemMat);
+        gem.position.set(3, 0.4, -3);
+        scene.add(gem);
+
+        // Kamera-Position (Schräg von oben)
+        camera.position.set(0, 6, 6);
+        camera.lookAt(player.position);
+
+        // --- SPIEL-LOGIK & STEUERUNG ---
+        let stats = { hp: 100, gold: 0, xp: 0 };
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+        function log(msg) {
+            const box = document.getElementById('console');
+            box.innerHTML += `> ${msg}<br>`;
+            box.scrollTop = box.scrollHeight;
         }
 
-        camera.position.set(0, 2, 5);
-        camera.lookAt(0, 0, 0);
+        function updateUI() {
+            document.getElementById('hp').innerText = stats.hp;
+            document.getElementById('gold').innerText = stats.gold;
+            document.getElementById('xp').innerText = stats.xp;
+        }
 
-        // Render-Schleife (Animation)
+        // Animations- und Bewegungs-Schleife
         function animate() {
             requestAnimationFrame(animate);
-            playerMesh.rotation.x += 0.01;
-            playerMesh.rotation.y += 0.015;
+
+            let speed = 0.05;
+            if (keys['w'] || keys['arrowup']) player.position.z -= speed;
+            if (keys['s'] || keys['arrowdown']) player.position.z += speed;
+            if (keys['a'] || keys['arrowleft']) player.position.x -= speed;
+            if (keys['d'] || keys['arrowright']) player.position.x += speed;
+
+            // Begrenzung im Dungeon
+            player.position.x = Math.max(-9, Math.min(9, player.position.x));
+            player.position.z = Math.max(-9, Math.min(9, player.position.z));
+
+            // Kamera folgt dem Spieler sanft
+            camera.position.x = player.position.x;
+            camera.position.z = player.position.z + 6;
+            camera.lookAt(player.position);
+
+            // Rotation des Sammelgegenstands
+            gem.rotation.y += 0.02;
+
+            // Kollisionsabfrage mit dem Goldkristall
+            if (player.position.distanceTo(gem.position) < 1.0) {
+                stats.gold += 25;
+                stats.xp += 50;
+                log("✨ Schatz eingesammelt! +25 Gold, +50 XP");
+                updateUI();
+                // Kristall an neue zufällige Position teleportieren
+                gem.position.set(
+                    (Math.random() - 0.5) * 14,
+                    0.4,
+                    (Math.random() - 0.5) * 14
+                );
+            }
+
             renderer.render(scene, camera);
         }
+
         animate();
-
-        // --- RPG SPIEL-LOGIK ---
-        let player = { hp: 100, maxHp: 100, gold: 10, xp: 0 };
-
-        function log(message) {
-            const consoleBox = document.getElementById('console');
-            consoleBox.innerHTML += `> ${message}<br>`;
-            consoleBox.scrollTop = consoleBox.scrollHeight;
-        }
-
-        function updateStats() {
-            document.getElementById('hp').innerText = player.hp;
-            document.getElementById('maxHp').innerText = player.maxHp;
-            document.getElementById('gold').innerText = player.gold;
-            document.getElementById('xp').innerText = player.xp;
-        }
-
-        function exploreDungeon() {
-            // Effekt auf das 3D-Objekt bei Aktion (kurz rot aufleuchten)
-            playerMesh.material.color.setHex(0xda3633);
-            setTimeout(() => playerMesh.material.color.setHex(0x238636), 300);
-
-            const events = [
-                { text: "Du hast einen Dungeon-Wächter besiegt!", gold: 15, xp: 20, damage: 15 },
-                { text: "Eine verlassene Schatzkammer entdeckt!", gold: 35, xp: 40, damage: 20 },
-                { text: "Eine Magiefalle schnappt zu!", gold: 5, xp: 10, damage: 25 },
-                { text: "Der Raum ist sicher. Du ruhst kurz aus.", gold: 10, xp: 5, damage: 5 }
-            ];
-            
-            const event = events[Math.floor(Math.random() * events.length)];
-            player.hp -= event.damage;
-            player.gold += event.gold;
-            player.xp += event.xp;
-
-            log(event.text);
-            log(`Status: -${event.damage} HP, +${event.gold} Gold, +${event.xp} XP`);
-
-            if (player.hp <= 0) {
-                player.hp = 0;
-                log("💀 Du wurdest besiegt! Wiederbelebung am Startpunkt...");
-                alert("Du wurdest im Dungeon besiegt!");
-                resetGame();
-                return;
-            }
-            updateStats();
-        }
-
-        function restAtCamp() {
-            if (player.gold >= 5) {
-                player.gold -= 5;
-                player.hp = Math.min(player.maxHp, player.hp + 40);
-                log("⛺ Am Lagerfeuer regeneriert. HP voll! (-5 Gold).");
-            } else {
-                log("❌ Zu wenig Gold für die Rast.");
-            }
-            updateStats();
-        }
-
-        function craftItem() {
-            if (player.gold >= 20) {
-                player.gold -= 20;
-                player.maxHp += 20;
-                player.hp = player.maxHp;
-                log("⚒️ Legendäre Ausrüstung geschmiedet! Max HP erhöht.");
-                // 3D-Objekt verändern
-                playerMesh.scale.set(1.2, 1.2, 1.2);
-            } else {
-                log("❌ Du benötigst 20 Gold zum Schmieden.");
-            }
-            updateStats();
-        }
-
-        function resetGame() {
-            player = { hp: 100, maxHp: 100, gold: 10, xp: 0 };
-            playerMesh.scale.set(1, 1, 1);
-            document.getElementById('console').innerHTML = "[System] Spielstand zurückgesetzt.<br>";
-            updateStats();
-        }
     </script>
 </body>
 </html>
