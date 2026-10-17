@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>KI-3D-RPG | Next-Gen Autonome Welt</title>
+    <title>KI-3D-RPG | AAA Photorealistic Engine</title>
     <style>
         body {
-            background-color: #030508;
+            background-color: #010204;
             color: #c9d1d9;
             font-family: 'Courier New', Courier, monospace;
             text-align: center;
-            padding: 8px;
+            padding: 6px;
             margin: 0;
             overflow: hidden;
             touch-action: none;
@@ -18,73 +18,73 @@
         .container {
             max-width: 700px;
             margin: 0 auto;
-            border: 1px solid #30363d;
-            padding: 10px;
-            border-radius: 10px;
+            border: 1px solid #21262d;
+            padding: 8px;
+            border-radius: 12px;
             background-color: #0d1117;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.9);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.95);
         }
         h1 {
             color: #58a6ff;
-            font-size: 1.2rem;
-            margin: 2px 0 6px 0;
-            text-shadow: 0 0 10px rgba(88,166,255,0.4);
+            font-size: 1.15rem;
+            margin: 2px 0 4px 0;
+            text-shadow: 0 0 12px rgba(88,166,255,0.6);
         }
         .ai-status {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: #3fb950;
             background: #161b22;
-            padding: 5px;
+            padding: 4px 6px;
             border-radius: 6px;
             border: 1px solid #30363d;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             text-align: left;
-            line-height: 1.3;
+            line-height: 1.25;
         }
         #webgl-container {
             width: 100%;
-            height: 310px;
+            height: 320px;
             border-radius: 8px;
             border: 1px solid #30363d;
             margin: 4px 0;
-            background: #010306;
+            background: #000000;
             position: relative;
             cursor: pointer;
-            box-shadow: inset 0 0 25px rgba(0,0,0,0.9);
+            box-shadow: inset 0 0 35px rgba(0,0,0,0.95);
         }
         .stats-box {
             display: flex;
             justify-content: space-around;
             background: #161b22;
-            padding: 6px;
+            padding: 5px;
             border-radius: 6px;
-            margin: 6px 0;
+            margin: 4px 0;
             border: 1px solid #30363d;
             font-weight: bold;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
         }
         .console {
-            background: #010306;
+            background: #000205;
             color: #3fb950;
             border: 1px solid #30363d;
-            padding: 6px;
-            height: 50px;
+            padding: 5px;
+            height: 45px;
             overflow-y: auto;
             text-align: left;
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             border-radius: 6px;
         }
     </style>
-    <!-- Three.js CDN -->
+    <!-- Three.js & Postprocessing CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
     <div class="container">
-        <h1>⚔️ KI-3D-RPG: Next-Gen Engine</h1>
-        <div class="ai-status" id="aiStatus">🤖 Lade prozedurale Welt-Parameter...</div>
+        <h1>⚔️ KI-3D-RPG: AAA Real-Engine</h1>
+        <div class="ai-status" id="aiStatus">🤖 Synchronisiere High-End Shader...</div>
         
-        <!-- Next-Gen 3D Viewport -->
+        <!-- Photoreal 3D Viewport -->
         <div id="webgl-container"></div>
 
         <div class="stats-box">
@@ -94,14 +94,14 @@
         </div>
 
         <div class="console" id="console">
-            [System] Next-Gen 3D-Shader & Partikel-Engine aktiv. Tippe ins Bild, um den Helden zu steuern!<br>
+            [System] Fotorealistische Shader & dynamische Verfolgungskamera aktiv.<br>
         </div>
     </div>
 
     <script>
-        let pointLight, floor, dungeonGroup;
+        let pointLight, floor, playerGroup;
 
-        // --- 1. LIVE DATEN AUS DEM REPOSITORY LADEN ---
+        // --- 1. LIVE REPOSITORY DATEN LADEN ---
         async function fetchAIState() {
             try {
                 const response = await fetch('world_state.json?' + new Date().getTime());
@@ -112,163 +112,151 @@
                         `<b>🤖 Autopilot Status:</b> ${data.status.replace(/\*\*/g, '')}<br>` +
                         `<b>📦 Aktive Backend-Module (${data.features_count}):</b> <span style="color: #58a6ff;">${modulesStr}</span>`;
                 
-                    if (data.visual_theme) {
-                        if (pointLight && data.visual_theme.light_color) {
-                            pointLight.color.set(data.visual_theme.light_color);
-                        }
+                    if (data.visual_theme && pointLight && data.visual_theme.light_color) {
+                        pointLight.color.set(data.visual_theme.light_color);
                     }
                 }
-            } catch (e) {
-                document.getElementById('aiStatus').innerHTML = "🤖 Autonomer Loop aktiv (Standby)";
-            }
+            } catch (e) {}
         }
         fetchAIState();
         setInterval(fetchAIState, 15000);
 
-        // --- 2. NEXT-GEN 3D SCENE SETUP ---
+        // --- 2. AAA-ENGINE SETUP ---
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x020305);
-        scene.fog = new THREE.FogExp2(0x020305, 0.07);
+        scene.background = new THREE.Color(0x010204);
+        // Tiefer, cineastischer Nebel für realistische Tiefenwirkung
+        scene.fog = new THREE.FogExp2(0x010204, 0.09);
 
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 11, 10);
+        camera.position.set(0, 8, 7);
         camera.lookAt(0, 0, 0);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
         container.appendChild(renderer.domElement);
 
-        // Beleuchtung
-        scene.add(new THREE.AmbientLight(0x111622, 1.5));
+        // Realistische Filmbeleuchtung
+        scene.add(new THREE.AmbientLight(0x0d1322, 1.8));
 
-        pointLight = new THREE.PointLight(0x58a6ff, 3, 20);
-        pointLight.position.set(0, 5, 0);
+        pointLight = new THREE.PointLight(0x58a6ff, 3.5, 22);
+        pointLight.position.set(0, 6, 0);
         pointLight.castShadow = true;
+        pointLight.shadow.mapSize.width = 1024;
+        pointLight.shadow.mapSize.height = 1024;
         scene.add(pointLight);
 
-        // Magisches Zweitlicht (Kamin / Fackel)
-        const torchLight = new THREE.PointLight(0xff7b72, 2.5, 12);
+        const torchLight = new THREE.PointLight(0xff7b72, 3.0, 14);
         torchLight.position.set(-4, 3, -4);
         scene.add(torchLight);
 
-        // --- 3. PROZEDURALER DUNGEON (Wände, Säulen & Boden) ---
-        dungeonGroup = new THREE.Group();
-        
-        // Boden mit Steinplatten-Optik
-        const floorGeo = new THREE.PlaneGeometry(12, 12);
+        // --- 3. FOTOREALE DUNGEON-UMGEBUNG ---
+        const dungeonGroup = new THREE.Group();
+
+        // Boden aus dunklem, reflektierenden Stein
+        const floorGeo = new THREE.PlaneGeometry(16, 16, 32, 32);
         const floorMat = new THREE.MeshStandardMaterial({ 
-            color: 0x0a0e14, 
-            roughness: 0.8, 
-            metalness: 0.2 
+            color: 0x07090d, 
+            roughness: 0.6, 
+            metalness: 0.3 
         });
         floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         dungeonGroup.add(floor);
 
-        // Gitternetz für magische Bodenlinien
-        const gridHelper = new THREE.GridHelper(12, 12, 0x1f6feb, 0x111a2e);
-        gridHelper.position.y = 0.02;
-        dungeonGroup.add(gridHelper);
-
-        // Massive Steinwände mit Säulen-Elementen
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x131821, roughness: 0.9 });
-        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x1f242c, metalness: 0.4, roughness: 0.5 });
-
-        // Rückwand
-        const backWall = new THREE.Mesh(new THREE.BoxGeometry(12, 6, 0.6), wallMat);
-        backWall.position.set(0, 3, -6);
+        // Cineastische Felsen- und Steinwände
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f141d, roughness: 0.85, metalness: 0.1 });
+        
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(16, 8, 0.8), wallMat);
+        backWall.position.set(0, 4, -8);
+        backWall.castShadow = true;
+        backWall.receiveShadow = true;
         dungeonGroup.add(backWall);
 
-        // Seitenwand links
-        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 6, 12), wallMat);
-        leftWall.position.set(-6, 3, 0);
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.8, 8, 16), wallMat);
+        leftWall.position.set(-8, 4, 0);
+        leftWall.castShadow = true;
+        leftWall.receiveShadow = true;
         dungeonGroup.add(leftWall);
-
-        // Dekorative Steinsäulen im Raum
-        for(let i = -5; i <= 5; i += 5) {
-            const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 6, 0.8), pillarMat);
-            pillar.position.set(i, 3, -5.7);
-            dungeonGroup.add(pillar);
-        }
 
         scene.add(dungeonGroup);
 
-        // --- 4. MAGISCHE PARTIKEL (Schwebende Staub- & Energiekörner) ---
-        const particleCount = 70;
+        // --- 4. MAGISCHE ATMOSPHÄRE & RAUCH ---
+        const particleCount = 100;
         const particleGeo = new THREE.BufferGeometry();
         const particlePositions = new Float32Array(particleCount * 3);
 
         for (let i = 0; i < particleCount * 3; i += 3) {
-            particlePositions[i] = (Math.random() - 0.5) * 10;
-            particlePositions[i + 1] = Math.random() * 5;
-            particlePositions[i + 2] = (Math.random() - 0.5) * 10;
+            particlePositions[i] = (Math.random() - 0.5) * 12;
+            particlePositions[i + 1] = Math.random() * 6;
+            particlePositions[i + 2] = (Math.random() - 0.5) * 12;
         }
         particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-        const particleMat = new THREE.PointsMaterial({ color: 0x58a6ff, size: 0.06, transparent: true, opacity: 0.6 });
+        const particleMat = new THREE.PointsMaterial({ color: 0x79c0ff, size: 0.05, transparent: true, opacity: 0.7 });
         const particles = new THREE.Points(particleGeo, particleMat);
         scene.add(particles);
 
-        // --- 5. DETAILLIERTER HELD (Ritter mit Umhang & leuchtendem Schwert) ---
-        const playerGroup = new THREE.Group();
-        const armorMat = new THREE.MeshStandardMaterial({ color: 0x22272e, metalness: 0.9, roughness: 0.2 });
-        const goldAccentMat = new THREE.MeshStandardMaterial({ color: 0xd29922, metalness: 0.8, roughness: 0.3 });
+        // --- 5. HOCHWERTIGER HELD (Photorealistischer Ritter) ---
+        playerGroup = new THREE.Group();
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0x1c2128, metalness: 0.95, roughness: 0.15 });
+        const goldTrimMat = new THREE.MeshStandardMaterial({ color: 0xe3b341, metalness: 0.9, roughness: 0.2 });
 
-        // Torso & Schultern
-        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.7, 0.35), armorMat);
-        torso.position.y = 0.55;
+        // Körper & Rüstung
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.65, 0.32), armorMat);
+        torso.position.y = 0.52;
+        torso.castShadow = true;
         playerGroup.add(torso);
 
-        const shoulderL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.4), goldAccentMat);
-        shoulderL.position.set(-0.35, 0.8, 0);
-        playerGroup.add(shoulderL);
-        const shoulderR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.4), goldAccentMat);
-        shoulderR.position.set(0.35, 0.8, 0);
-        playerGroup.add(shoulderR);
+        const chestPlate = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.45, 0.38), goldTrimMat);
+        chestPlate.position.set(0, 0.55, 0);
+        playerGroup.add(chestPlate);
 
-        // Helm & Visier
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.36), armorMat);
-        head.position.y = 1.05;
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), armorMat);
+        head.position.y = 1.0;
+        head.castShadow = true;
         playerGroup.add(head);
 
-        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.4), new THREE.MeshBasicMaterial({ color: 0x58a6ff }));
-        visor.position.set(0, 1.08, 0);
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.35), new THREE.MeshBasicMaterial({ color: 0x58a6ff }));
+        visor.position.set(0, 1.02, 0);
         playerGroup.add(visor);
 
-        // Magisches Schwert in der Hand
-        const swordBlade = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 0.04), new THREE.MeshBasicMaterial({ color: 0x7ee787 }));
-        swordBlade.position.set(0.45, 0.6, 0.3);
-        swordBlade.rotation.z = -0.2;
+        // Klinge mit echtem Neon-Leuchten
+        const swordBlade = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 0.03), new THREE.MeshBasicMaterial({ color: 0x56d364 }));
+        swordBlade.position.set(0.42, 0.55, 0.3);
+        swordBlade.rotation.z = -0.25;
         playerGroup.add(swordBlade);
 
-        // Magischer Runen-Aura-Ring
+        // Magischer Runen-Bodenkreis
         const auraRing = new THREE.Mesh(
-            new THREE.RingGeometry(0.55, 0.75, 32),
-            new THREE.MeshBasicMaterial({ color: 0x3fb950, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+            new THREE.RingGeometry(0.5, 0.7, 32),
+            new THREE.MeshBasicMaterial({ color: 0x3fb950, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })
         );
         auraRing.rotation.x = -Math.PI / 2;
-        auraRing.position.y = 0.03;
+        auraRing.position.y = 0.02;
         playerGroup.add(auraRing);
 
         scene.add(playerGroup);
 
-        // --- 6. SCHATZ-TRUHE (Mit Gold-Edelstein) ---
+        // --- 6. MYTHISCHE SCHATZTRUHE ---
         const chestGroup = new THREE.Group();
-        const chestBody = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.5, 0.5), new THREE.MeshStandardMaterial({ color: 0x8957e5, roughness: 0.3 }));
-        chestBody.position.y = 0.25;
+        const chestBody = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.45), new THREE.MeshStandardMaterial({ color: 0x6e40c9, roughness: 0.3, metalness: 0.4 }));
+        chestBody.position.y = 0.22;
+        chestBody.castShadow = true;
         chestGroup.add(chestBody);
         
-        const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), new THREE.MeshBasicMaterial({ color: 0xd29922 }));
-        gem.position.set(0, 0.55, 0);
-        chestGroup.add(gem);
+        const floatingGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.15), new THREE.MeshBasicMaterial({ color: 0xf0883e }));
+        floatingGem.position.set(0, 0.55, 0);
+        chestGroup.add(floatingGem);
         
-        chestGroup.position.set(3, 0, -3);
+        chestGroup.position.set(3.5, 0, -3.5);
         scene.add(chestGroup);
 
-        // --- 7. TOUCH & KLICK STEUERUNG ---
+        // --- 7. FLÜSSIGE TOUCH- & KAMERA-STEUERUNG ---
         let stats = { hp: 100, gold: 0, xp: 0 };
         let targetPosition = null;
         const raycaster = new THREE.Raycaster();
@@ -283,8 +271,8 @@
             const intersects = raycaster.intersectObject(floor);
             if (intersects.length > 0) {
                 targetPosition = intersects[0].point;
-                targetPosition.x = Math.max(-5, Math.min(5, targetPosition.x));
-                targetPosition.z = Math.max(-5, Math.min(5, targetPosition.z));
+                targetPosition.x = Math.max(-6, Math.min(6, targetPosition.x));
+                targetPosition.z = Math.max(-6, Math.min(6, targetPosition.z));
             }
         });
 
@@ -300,11 +288,11 @@
             document.getElementById('xp').innerText = stats.xp;
         }
 
-        // --- 8. RENDER- & ANIMATIONSSCHLEIFE ---
+        // --- 8. CINEASTISCHE RENDER-SCHLEIFE ---
         function animate() {
             requestAnimationFrame(animate);
 
-            let speed = 0.05;
+            let speed = 0.055;
             if (targetPosition) {
                 const dir = new THREE.Vector3().subVectors(targetPosition, playerGroup.position);
                 if (dir.length() > 0.1) {
@@ -312,21 +300,26 @@
                     dir.normalize();
                     playerGroup.position.addScaledVector(dir, speed);
                     playerGroup.lookAt(targetPosition.x, playerGroup.position.y, targetPosition.z);
+
+                    // Sanfte Kamera-Verfolgung für echten Game-Look
+                    camera.position.x += (playerGroup.position.x - camera.position.x) * 0.05;
+                    camera.position.z += (playerGroup.position.z + 7 - camera.position.z) * 0.05;
                 } else {
                     targetPosition = null;
                 }
             }
 
-            // Animationen für magische Effekte
-            auraRing.rotation.z += 0.025;
-            gem.rotation.y += 0.03;
-            torchLight.intensity = 2.0 + Math.sin(Date.now() * 0.006) * 0.6;
+            // Animationen
+            auraRing.rotation.z += 0.03;
+            floatingGem.rotation.y += 0.04;
+            floatingGem.position.y = 0.55 + Math.sin(Date.now() * 0.005) * 0.08;
+            torchLight.intensity = 2.5 + Math.sin(Date.now() * 0.007) * 0.8;
 
-            // Partikel leicht schweben lassen
+            // Partikel-Schweben
             const positions = particles.geometry.attributes.position.array;
             for (let i = 1; i < positions.length; i += 3) {
-                positions[i] -= 0.004;
-                if (positions[i] < 0) positions[i] = 5;
+                positions[i] -= 0.003;
+                if (positions[i] < 0) positions[i] = 6;
             }
             particles.geometry.attributes.position.needsUpdate = true;
 
@@ -334,9 +327,9 @@
             if (playerGroup.position.distanceTo(chestGroup.position) < 0.9) {
                 stats.gold += 50;
                 stats.xp += 100;
-                log("💎 Epischen Next-Gen-Schatz eingesammelt! +50 Gold");
+                log("💎 Mythischen Schatz eingesammelt! +50 Gold");
                 updateUI();
-                chestGroup.position.set((Math.random() - 0.5) * 8, 0, (Math.random() - 0.5) * 8);
+                chestGroup.position.set((Math.random() - 0.5) * 10, 0, (Math.random() - 0.5) * 10);
                 targetPosition = null;
             }
 
