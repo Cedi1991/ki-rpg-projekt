@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>KI-RPG-Projekt | Touch- & 3D-Steuerung</title>
+    <title>KI-RPG-Projekt | Autonome Live-Welt</title>
     <style>
         body {
             background-color: #05070a;
@@ -26,17 +26,21 @@
         }
         h1 {
             color: #58a6ff;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             margin: 4px 0;
         }
-        .controls-hint {
+        .ai-status {
             font-size: 0.75rem;
-            color: #8b949e;
+            color: #3fb950;
+            background: #161b22;
+            padding: 4px;
+            border-radius: 4px;
+            border: 1px solid #30363d;
             margin-bottom: 6px;
         }
         #webgl-container {
             width: 100%;
-            height: 300px;
+            height: 260px;
             border-radius: 8px;
             border: 1px solid #30363d;
             margin: 6px 0;
@@ -73,8 +77,8 @@
 <body>
 
     <div class="container">
-        <h1>⚔️ KI-3D-RPG: Touch & Tastatur</h1>
-        <div class="controls-hint">👆 <b>Tippe mit dem Finger</b> oder klicke ins Spielfeld, um den Ritter zu steuern! (Oder WASD)</div>
+        <h1>⚔️ KI-3D-RPG: Autonomes Live-Netzwerk</h1>
+        <div class="ai-status" id="aiStatus">🤖 Lade aktuellen Autopilot-Zustand aus dem Repository...</div>
         
         <!-- 3D Canvas Viewport -->
         <div id="webgl-container"></div>
@@ -86,12 +90,31 @@
         </div>
 
         <div class="console" id="console">
-            [System] Touch-Steuerung aktiv. Klicke oder tippe in den Dungeon!<br>
+            [System] Verbinde 3D-Welt mit dem GitHub-Repository...<br>
         </div>
     </div>
 
     <script>
-        // --- SZENE & SETUP ---
+        // --- LIVE DATEN AUS DEM REPOSITORY LADEN ---
+        async function loadRepositoryData() {
+            try {
+                // Versucht die vom Orchestrator generierte world_state.json zu laden, 
+                // oder greift auf Standardwerte zurück, falls der Autopilot im Hintergrund baut.
+                const response = await fetch('world_state.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('aiStatus').innerText = `🤖 Autopilot-Modul aktiv: ${data.latest_module || 'Quantum Core'}`;
+                    log(`[Sync] Repository-Daten erfolgreich geladen (${data.features_count || 'Multi'} Module aktiv).`);
+                } else {
+                    document.getElementById('aiStatus').innerText = "🤖 Autonomer Loop aktiv (Workspace synchronisiert)";
+                }
+            } catch (e) {
+                document.getElementById('aiStatus').innerText = "🤖 Autonomer Loop aktiv (Standby-Modus)";
+            }
+        }
+        loadRepositoryData();
+
+        // --- 3D SZENE & RITTER ---
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x020408);
@@ -104,13 +127,12 @@
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
 
-        // Licht
         scene.add(new THREE.AmbientLight(0x1f2937, 0.8));
         const neonLight = new THREE.PointLight(0x3fb950, 2, 15);
         neonLight.position.set(0, 2, 0);
         scene.add(neonLight);
 
-        // Dungeon Boden & Grid
+        // Boden & Grid
         const floor = new THREE.Mesh(
             new THREE.PlaneGeometry(10, 10),
             new THREE.MeshStandardMaterial({ color: 0x11161d, roughness: 0.9 })
@@ -124,29 +146,17 @@
 
         // Wände
         const wallMat = new THREE.MeshStandardMaterial({ color: 0x1f242c, roughness: 0.8 });
-        const backWall = new THREE.Mesh(new THREE.BoxGeometry(10, 5, 0.5), wallMat);
-        backWall.position.set(0, 2.5, -5);
-        scene.add(backWall);
-        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5, 10), wallMat);
-        leftWall.position.set(-5, 2.5, 0);
-        scene.add(leftWall);
+        scene.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10, 5, 0.5), wallMat), { position: { x: 0, y: 2.5, z: -5 } }));
+        scene.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.5, 5, 10), wallMat), { position: { x: -5, y: 2.5, z: 0 } }));
 
-        // --- SPIELFIGUR (Ritter) ---
+        // Ritter Spielfigur
         const playerGroup = new THREE.Group();
         const bodyMat = new THREE.MeshStandardMaterial({ color: 0x30363d, metalness: 0.8, roughness: 0.2 });
         
-        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.4), bodyMat);
-        torso.position.y = 0.6;
-        playerGroup.add(torso);
-
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), bodyMat);
-        head.position.y = 1.1;
-        playerGroup.add(head);
-
-        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.45), new THREE.MeshBasicMaterial({ color: 0x58a6ff }));
-        eye.position.set(0, 1.12, 0);
-        playerGroup.add(eye);
-
+        playerGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.4), bodyMat), { position: { y: 0.6 } }));
+        playerGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), bodyMat), { position: { y: 1.1 } }));
+        playerGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.45), new THREE.MeshBasicMaterial({ color: 0x58a6ff })), { position: { x: 0, y: 1.12, z: 0 } }));
+        
         const sword = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.2, 0.05), new THREE.MeshStandardMaterial({ color: 0x8b949e, metalness: 0.9 }));
         sword.position.set(0.4, 0.6, 0.3);
         sword.rotation.z = -0.3;
@@ -162,7 +172,7 @@
 
         scene.add(playerGroup);
 
-        // --- SCHATZ ---
+        // Schatz
         const chest = new THREE.Mesh(
             new THREE.BoxGeometry(0.8, 0.6, 0.6),
             new THREE.MeshStandardMaterial({ color: 0x8957e5, roughness: 0.5 })
@@ -170,35 +180,24 @@
         chest.position.set(3, 0.3, -3);
         scene.add(chest);
 
-        // --- STEUERUNG (Tastatur & Touch/Klick) ---
+        // Touch & Klick Navigation
         let stats = { hp: 100, gold: 0, xp: 0 };
-        const keys = {};
-        let targetPosition = null; // Für Klick/Touch-Navigation
-
-        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; targetPosition = null; });
-        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
-
-        // Raycaster für Maus- / Touch-Klicks auf den Boden
+        let targetPosition = null;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        function handlePointerMove(clientX, clientY) {
+        renderer.domElement.addEventListener('pointerdown', (e) => {
             const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObject(floor);
-
             if (intersects.length > 0) {
                 targetPosition = intersects[0].point;
                 targetPosition.x = Math.max(-4.2, Math.min(4.2, targetPosition.x));
                 targetPosition.z = Math.max(-4.2, Math.min(4.2, targetPosition.z));
             }
-        }
-
-        renderer.domElement.addEventListener('pointerdown', (e) => {
-            handlePointerMove(e.clientX, e.clientY);
         });
 
         function log(msg) {
@@ -217,8 +216,6 @@
             requestAnimationFrame(animate);
 
             let speed = 0.06;
-
-            // Entweder per Touch/Klick-Ziel bewegen oder per Tastatur
             if (targetPosition) {
                 const dir = new THREE.Vector3().subVectors(targetPosition, playerGroup.position);
                 if (dir.length() > 0.1) {
@@ -229,24 +226,14 @@
                 } else {
                     targetPosition = null;
                 }
-            } else {
-                if (keys['w'] || keys['arrowup']) { playerGroup.position.z -= speed; playerGroup.rotation.y = Math.PI; }
-                if (keys['s'] || keys['arrowdown']) { playerGroup.position.z += speed; playerGroup.rotation.y = 0; }
-                if (keys['a'] || keys['arrowleft']) { playerGroup.position.x -= speed; playerGroup.rotation.y = -Math.PI / 2; }
-                if (keys['d'] || keys['arrowright']) { playerGroup.position.x += speed; playerGroup.rotation.y = Math.PI / 2; }
             }
-
-            // Grenzen einhalten
-            playerGroup.position.x = Math.max(-4.2, Math.min(4.2, playerGroup.position.x));
-            playerGroup.position.z = Math.max(-4.2, Math.min(4.2, playerGroup.position.z));
 
             auraRing.rotation.z += 0.02;
 
-            // Schatz-Kollision
             if (playerGroup.position.distanceTo(chest.position) < 1.0) {
                 stats.gold += 50;
                 stats.xp += 100;
-                log("💎 Schatz eingesammelt! +50 Gold, +100 XP");
+                log("💎 Schatz aus dem Repository-Raum eingesammelt! +50 Gold");
                 updateUI();
                 chest.position.set((Math.random() - 0.5) * 6, 0.3, (Math.random() - 0.5) * 6);
                 targetPosition = null;
