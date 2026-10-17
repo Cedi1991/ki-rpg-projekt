@@ -1,8 +1,8 @@
 {
-    "latest_module": "src/factions.py`)**:",
+    "latest_module": "src/crafting.py`)**:",
     "features_count": 1,
     "modules": [
         "main.py"
     ],
-    "status": "Zuletzt implementiert: **Prozedurales Fraktions- und Gilden-Netzwerk (`src/factions.py`)**: Erstelle ein komplexes System rivalisierender Fraktionen, in dem der Spieler durch Quests und Entscheidungen Rufpunkte sammelt, die weltweite Bündnisse und Territoriums-Kontrollen triggern."
+    "status": "Zuletzt implementiert: **Komplexes Alchemie- und Handwerkssystem (`src/crafting.py`)**: Entwickle eine Multimaterial-Crafting-Engine mit Rezept-Entdeckungen, Qualitätsstufen (Legendär, Episch) und physikbasierten Attributen für Waffen und Tränke."
 }
