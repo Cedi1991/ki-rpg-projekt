@@ -2,78 +2,79 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KI-RPG-Projekt | 3D-Steuerbare Welt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>KI-RPG-Projekt | Touch- & 3D-Steuerung</title>
     <style>
         body {
-            background-color: #0d1117;
+            background-color: #05070a;
             color: #c9d1d9;
             font-family: 'Courier New', Courier, monospace;
             text-align: center;
             padding: 10px;
             margin: 0;
             overflow: hidden;
+            touch-action: none;
         }
         .container {
             max-width: 700px;
             margin: 0 auto;
             border: 2px solid #30363d;
-            padding: 15px;
+            padding: 12px;
             border-radius: 12px;
-            background-color: #161b22;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background-color: #0d1117;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         h1 {
             color: #58a6ff;
-            font-size: 1.6rem;
-            margin: 5px 0;
+            font-size: 1.5rem;
+            margin: 4px 0;
+        }
+        .controls-hint {
+            font-size: 0.75rem;
+            color: #8b949e;
+            margin-bottom: 6px;
         }
         #webgl-container {
             width: 100%;
-            height: 280px;
+            height: 300px;
             border-radius: 8px;
             border: 1px solid #30363d;
-            margin: 10px 0;
-            background: #010409;
+            margin: 6px 0;
+            background: #020408;
             position: relative;
-        }
-        .controls-hint {
-            font-size: 0.8rem;
-            color: #8b949e;
-            margin-bottom: 8px;
+            cursor: pointer;
         }
         .stats-box {
             display: flex;
             justify-content: space-around;
-            background: #0d1117;
-            padding: 8px;
-            border-radius: 8px;
-            margin: 8px 0;
+            background: #161b22;
+            padding: 6px;
+            border-radius: 6px;
+            margin: 6px 0;
             border: 1px solid #30363d;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         .console {
-            background: #010409;
-            color: #7ee787;
+            background: #020408;
+            color: #3fb950;
             border: 1px solid #30363d;
-            padding: 8px;
-            height: 80px;
+            padding: 6px;
+            height: 60px;
             overflow-y: auto;
             text-align: left;
-            font-size: 0.8rem;
-            border-radius: 8px;
-            margin-bottom: 8px;
+            font-size: 0.75rem;
+            border-radius: 6px;
         }
     </style>
-    <!-- Three.js für die 3D-Grafik -->
+    <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
     <div class="container">
-        <h1>⚔️ KI-3D-RPG: Steuerbarer Held</h1>
-        <div class="controls-hint">🎮 Steuerung: Benutze die <b>Pfeiltasten</b> oder <b>W, A, S, D</b>, um die Spielfigur im 3D-Dungeon zu bewegen!</div>
+        <h1>⚔️ KI-3D-RPG: Touch & Tastatur</h1>
+        <div class="controls-hint">👆 <b>Tippe mit dem Finger</b> oder klicke ins Spielfeld, um den Ritter zu steuern! (Oder WASD)</div>
         
         <!-- 3D Canvas Viewport -->
         <div id="webgl-container"></div>
@@ -85,59 +86,120 @@
         </div>
 
         <div class="console" id="console">
-            [System] 3D-Welt geladen. Steuere deinen Helden durch den Dungeon!<br>
+            [System] Touch-Steuerung aktiv. Klicke oder tippe in den Dungeon!<br>
         </div>
     </div>
 
     <script>
-        // --- 3D SZENE INITIALISIERUNG ---
+        // --- SZENE & SETUP ---
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x05070a);
+        scene.background = new THREE.Color(0x020408);
 
-        const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(10, 12, 10);
+        camera.lookAt(0, 0, 0);
+
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
 
         // Licht
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0x58a6ff, 2, 50);
-        pointLight.position.set(0, 10, 0);
-        scene.add(pointLight);
+        scene.add(new THREE.AmbientLight(0x1f2937, 0.8));
+        const neonLight = new THREE.PointLight(0x3fb950, 2, 15);
+        neonLight.position.set(0, 2, 0);
+        scene.add(neonLight);
 
-        // Bodenplatte (Dungeon-Raum)
-        const floorGeo = new THREE.PlaneGeometry(20, 20);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x161b22, roughness: 0.9 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
+        // Dungeon Boden & Grid
+        const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(10, 10),
+            new THREE.MeshStandardMaterial({ color: 0x11161d, roughness: 0.9 })
+        );
         floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
-        // Spielfigur (Helden-Würfel)
-        const playerGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-        const playerMat = new THREE.MeshStandardMaterial({ color: 0x238636, metalness: 0.5 });
-        const player = new THREE.Mesh(playerGeo, playerMat);
-        player.position.y = 0.4;
-        scene.add(player);
+        const gridHelper = new THREE.GridHelper(10, 10, 0x3fb950, 0x1a472a);
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
 
-        // Sammelbarer Schatz (Goldkristall)
-        const gemGeo = new THREE.OctahedronGeometry(0.4);
-        const gemMat = new THREE.MeshStandardMaterial({ color: 0xd29922, emissive: 0x6e4002 });
-        const gem = new THREE.Mesh(gemGeo, gemMat);
-        gem.position.set(3, 0.4, -3);
-        scene.add(gem);
+        // Wände
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x1f242c, roughness: 0.8 });
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(10, 5, 0.5), wallMat);
+        backWall.position.set(0, 2.5, -5);
+        scene.add(backWall);
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5, 10), wallMat);
+        leftWall.position.set(-5, 2.5, 0);
+        scene.add(leftWall);
 
-        // Kamera-Position (Schräg von oben)
-        camera.position.set(0, 6, 6);
-        camera.lookAt(player.position);
+        // --- SPIELFIGUR (Ritter) ---
+        const playerGroup = new THREE.Group();
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x30363d, metalness: 0.8, roughness: 0.2 });
+        
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.4), bodyMat);
+        torso.position.y = 0.6;
+        playerGroup.add(torso);
 
-        // --- SPIEL-LOGIK & STEUERUNG ---
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), bodyMat);
+        head.position.y = 1.1;
+        playerGroup.add(head);
+
+        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.45), new THREE.MeshBasicMaterial({ color: 0x58a6ff }));
+        eye.position.set(0, 1.12, 0);
+        playerGroup.add(eye);
+
+        const sword = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.2, 0.05), new THREE.MeshStandardMaterial({ color: 0x8b949e, metalness: 0.9 }));
+        sword.position.set(0.4, 0.6, 0.3);
+        sword.rotation.z = -0.3;
+        playerGroup.add(sword);
+
+        const auraRing = new THREE.Mesh(
+            new THREE.RingGeometry(0.6, 0.8, 32),
+            new THREE.MeshBasicMaterial({ color: 0x3fb950, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
+        );
+        auraRing.rotation.x = -Math.PI / 2;
+        auraRing.position.y = 0.02;
+        playerGroup.add(auraRing);
+
+        scene.add(playerGroup);
+
+        // --- SCHATZ ---
+        const chest = new THREE.Mesh(
+            new THREE.BoxGeometry(0.8, 0.6, 0.6),
+            new THREE.MeshStandardMaterial({ color: 0x8957e5, roughness: 0.5 })
+        );
+        chest.position.set(3, 0.3, -3);
+        scene.add(chest);
+
+        // --- STEUERUNG (Tastatur & Touch/Klick) ---
         let stats = { hp: 100, gold: 0, xp: 0 };
         const keys = {};
+        let targetPosition = null; // Für Klick/Touch-Navigation
 
-        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; targetPosition = null; });
         window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+        // Raycaster für Maus- / Touch-Klicks auf den Boden
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function handlePointerMove(clientX, clientY) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(floor);
+
+            if (intersects.length > 0) {
+                targetPosition = intersects[0].point;
+                targetPosition.x = Math.max(-4.2, Math.min(4.2, targetPosition.x));
+                targetPosition.z = Math.max(-4.2, Math.min(4.2, targetPosition.z));
+            }
+        }
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+            handlePointerMove(e.clientX, e.clientY);
+        });
 
         function log(msg) {
             const box = document.getElementById('console');
@@ -151,40 +213,43 @@
             document.getElementById('xp').innerText = stats.xp;
         }
 
-        // Animations- und Bewegungs-Schleife
         function animate() {
             requestAnimationFrame(animate);
 
-            let speed = 0.05;
-            if (keys['w'] || keys['arrowup']) player.position.z -= speed;
-            if (keys['s'] || keys['arrowdown']) player.position.z += speed;
-            if (keys['a'] || keys['arrowleft']) player.position.x -= speed;
-            if (keys['d'] || keys['arrowright']) player.position.x += speed;
+            let speed = 0.06;
 
-            // Begrenzung im Dungeon
-            player.position.x = Math.max(-9, Math.min(9, player.position.x));
-            player.position.z = Math.max(-9, Math.min(9, player.position.z));
+            // Entweder per Touch/Klick-Ziel bewegen oder per Tastatur
+            if (targetPosition) {
+                const dir = new THREE.Vector3().subVectors(targetPosition, playerGroup.position);
+                if (dir.length() > 0.1) {
+                    dir.y = 0;
+                    dir.normalize();
+                    playerGroup.position.addScaledVector(dir, speed);
+                    playerGroup.lookAt(targetPosition.x, playerGroup.position.y, targetPosition.z);
+                } else {
+                    targetPosition = null;
+                }
+            } else {
+                if (keys['w'] || keys['arrowup']) { playerGroup.position.z -= speed; playerGroup.rotation.y = Math.PI; }
+                if (keys['s'] || keys['arrowdown']) { playerGroup.position.z += speed; playerGroup.rotation.y = 0; }
+                if (keys['a'] || keys['arrowleft']) { playerGroup.position.x -= speed; playerGroup.rotation.y = -Math.PI / 2; }
+                if (keys['d'] || keys['arrowright']) { playerGroup.position.x += speed; playerGroup.rotation.y = Math.PI / 2; }
+            }
 
-            // Kamera folgt dem Spieler sanft
-            camera.position.x = player.position.x;
-            camera.position.z = player.position.z + 6;
-            camera.lookAt(player.position);
+            // Grenzen einhalten
+            playerGroup.position.x = Math.max(-4.2, Math.min(4.2, playerGroup.position.x));
+            playerGroup.position.z = Math.max(-4.2, Math.min(4.2, playerGroup.position.z));
 
-            // Rotation des Sammelgegenstands
-            gem.rotation.y += 0.02;
+            auraRing.rotation.z += 0.02;
 
-            // Kollisionsabfrage mit dem Goldkristall
-            if (player.position.distanceTo(gem.position) < 1.0) {
-                stats.gold += 25;
-                stats.xp += 50;
-                log("✨ Schatz eingesammelt! +25 Gold, +50 XP");
+            // Schatz-Kollision
+            if (playerGroup.position.distanceTo(chest.position) < 1.0) {
+                stats.gold += 50;
+                stats.xp += 100;
+                log("💎 Schatz eingesammelt! +50 Gold, +100 XP");
                 updateUI();
-                // Kristall an neue zufällige Position teleportieren
-                gem.position.set(
-                    (Math.random() - 0.5) * 14,
-                    0.4,
-                    (Math.random() - 0.5) * 14
-                );
+                chest.position.set((Math.random() - 0.5) * 6, 0.3, (Math.random() - 0.5) * 6);
+                targetPosition = null;
             }
 
             renderer.render(scene, camera);
