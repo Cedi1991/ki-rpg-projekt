@@ -1,5 +1,0 @@
-import pytest
-from persistence import *
-
-def test_automatic_sanity():
-    assert True
