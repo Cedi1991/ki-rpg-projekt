@@ -3,6 +3,7 @@ import json
 import subprocess
 import time
 import re
+import importlib.util
 from pathlib import Path
 from openai import OpenAI
 
@@ -74,7 +75,7 @@ Hier ist die aktuelle TODO.md:
 {current_content}
 
 Der letzte Task wurde erfolgreich implementiert und getestet.
-Erfinde EINEN neuen, absolut epischen und bahnbrechenden Task (z.B. aus den Bereichen: Advanced 3D Engine, Dynamische Welt-Simulation, KI-gesteuerte NPCs mit Erinnerungsvermögen, Echtzeit-Netzwerk-Multiplayer, komplexe Ökonomie- und Handwerkssysteme oder immersive Magie- und Kampfsysteme), der das Spiel auf ein neues Level hebt.
+Erfinde EINEN neuen, absolut epischen und bahnbrechenden Task (z.B. aus den Bereichen: Prozedurale Grafik-Shader, dynamische Dungeon-Architektur, KI-gesteuerte NPCs, komplexe Zaubersysteme oder Shader-Optimierungen), der das Spiel grafisch oder spielerisch auf ein neues Level hebt.
 Der Task muss als nächster `- [ ]` Punkt an das Ende der TODO.md angehängt werden.
 Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Detaillierte Beschreibung des High-End-Features...`
 """
@@ -93,31 +94,39 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Detai
         print(f"⚠️ Konnte kein neues Epic-Task generieren: {e}")
 
 def export_world_state(target_file: str, target_task: str):
-    """Generiert die world_state.json inklusive prozeduraler Dungeon-Objekte für das isometrische Frontend."""
+    """Liest prozedurale Daten aus den KI-Backend-Modulen und exportiert sie in die world_state.json."""
     try:
         modules = [f.name for f in WORKSPACE_DIR.glob("*.py")]
         
-        # Prozedurale Dungeon-Objekte, die vom Backend an das Frontend übergeben werden
-        dungeon_objects = [
-            {"type": "chest", "x": 3.5, "z": -3.5, "loot": "50 Gold"},
-            {"type": "chest", "x": -3.5, "z": 2.5, "loot": "Magischer Ring"},
-            {"type": "crystal", "x": 4.0, "z": -5.0, "color": "green"},
-            {"type": "crystal", "x": -4.0, "z": -4.0, "color": "blue"},
-            {"type": "barrel", "x": -4.5, "z": -2.0},
-            {"type": "torch", "x": 0.0, "z": -5.8},
-        ]
-        
+        # Standard-Design-Parameter als Basis
         visual_theme = {
             "wall_color": "#1e293b",
-            "light_color": "#58a6ff",
+            "light_color": "#38bdf8",
             "floor_color": "#0f172a",
-            "ambient_intensity": 2.0
+            "ambient_intensity": 2.2,
+            "fog_density": 0.035
         }
         
-        if "weather" in target_file.lower():
-            visual_theme["light_color"] = "#3fb950"
-        elif "magic" in target_file.lower():
-            visual_theme["light_color"] = "#a855f7"
+        dungeon_objects = [
+            {"type": "chest", "x": 3.5, "z": -3.5, "loot": "50 Gold"},
+            {"type": "chest", "x": -3.5, "z": 2.5, "loot": "Magisches Artefakt"},
+            {"type": "crystal", "x": 4.0, "z": -5.0, "color": "green"},
+            {"type": "crystal", "x": -4.0, "z": -4.0, "color": "blue"},
+        ]
+
+        # Dynamische Auswertung: Wenn die KI ein Grafik- oder Dungeon-Modul erstellt hat, versuchen wir dessen Parameter zu laden
+        graphics_py = WORKSPACE_DIR / "graphics_engine.py"
+        if graphics_py.exists():
+            try:
+                spec = importlib.util.spec_from_file_location("graphics_engine", graphics_py)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                if hasattr(mod, "get_visual_theme"):
+                    visual_theme.update(mod.get_visual_theme())
+                if hasattr(mod, "get_dungeon_objects"):
+                    dungeon_objects = mod.get_dungeon_objects()
+            except Exception as ex:
+                print(f"ℹ️ Konnte graphics_engine.py nicht direkt ausführen, nutze KI-Standardwerte: {ex}")
 
         state = {
             "latest_module": target_file,
@@ -129,13 +138,13 @@ def export_world_state(target_file: str, target_task: str):
         }
         
         Path("world_state.json").write_text(json.dumps(state, ensure_ascii=False, indent=4), encoding="utf-8")
-        print("🌍 world_state.json mit prozeduralen Backend-Dungeon-Daten aktualisiert!")
+        print("🌍 world_state.json erfolgreich aus den Backend-Modulen synchronisiert!")
     except Exception as e:
         print(f"⚠️ Fehler beim Exportieren der world_state.json: {e}")
 
 def main():
     print("==========================================================")
-    print("🚀 Projekt-Zyklus 1/1 gestartet (Volle Modul-Autonomie & Push)")
+    print("🚀 Projekt-Zyklus gestartet (Backend-Modul Autonomie)")
     print(f"📌 Aktives Modell: {MODEL_ID}")
     print("==========================================================")
 
@@ -179,9 +188,10 @@ def main():
         f"```python\n{current_target_content}\n```\n\n"
         f"REGELN:\n"
         f"1. Passe die Datei `{target_file}` so an, dass alle bestehenden Tests fehlerfrei durchlaufen.\n"
-        f"2. Antworte AUSSCHLIESSLICH mit dem vollständigen, validen Python-Code in einem Markdown-Codeblock (```python ... ```).\n"
-        f"3. Kein erklärender Text!\n"
-        f"4. NIEMALS modul.py bearbeiten!"
+        f"2. Wenn es sich um ein Grafik- oder Welt-Modul handelt (z.B. graphics_engine.py), implementiere Funktionen wie get_visual_theme() oder get_dungeon_objects().\n"
+        f"3. Antworte AUSSCHLIESSLICH mit dem vollständigen, validen Python-Code in einem Markdown-Codeblock (```python ... ```).\n"
+        f"4. Kein erklärender Text!\n"
+        f"5. NIEMALS modul.py bearbeiten!"
     )
 
     success = False
@@ -241,8 +251,6 @@ def main():
                 subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"])
                 subprocess.run(["git", "add", "workspace/", "world_state.json"])
                 subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}' & aktualisiere World-State"])
-
-                # Automatischer Git-Push ins Repository
                 subprocess.run(["git", "push"], capture_output=True)
                 break
             else:
