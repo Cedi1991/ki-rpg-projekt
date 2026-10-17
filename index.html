@@ -94,11 +94,13 @@
         </div>
 
         <div class="console" id="console">
-            [System] 3D-Engine initialisiert. Tippe ins Bild, um den Ritter durch den Dungeon zu steuern.<br>
+            [System] 3D-Engine initialisiert. Tippe ins Bild, um den Ritter zu steuern.<br>
         </div>
     </div>
 
     <script>
+        let pointLight, floor;
+
         // --- 1. LIVE DATEN AUS DEM REPOSITORY LADEN ---
         async function fetchAIState() {
             try {
@@ -109,6 +111,16 @@
                     document.getElementById('aiStatus').innerHTML = 
                         `<b>🤖 Autopilot Status:</b> ${data.status.replace(/\*\*/g, '')}<br>` +
                         `<b>📦 Aktive Backend-Module (${data.features_count}):</b> <span style="color: #58a6ff;">${modulesStr}</span>`;
+                
+                    // Übernehme visuelle Design-Parameter direkt von der KI
+                    if (data.visual_theme) {
+                        if (pointLight && data.visual_theme.light_color) {
+                            pointLight.color.set(data.visual_theme.light_color);
+                        }
+                        if (floor && data.visual_theme.floor_color) {
+                            floor.material.color.set(data.visual_theme.floor_color);
+                        }
+                    }
                 } else {
                     document.getElementById('aiStatus').innerHTML = "🤖 Autonomer Loop aktiv (Warte auf State-Sync)";
                 }
@@ -134,11 +146,11 @@
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        // Lichtquellen für atmosphärisches Dungeon-Flair
+        // Lichtquellen
         const ambientLight = new THREE.AmbientLight(0x111927, 1.2);
         scene.add(ambientLight);
 
-        const pointLight = new THREE.PointLight(0x58a6ff, 2.5, 18);
+        pointLight = new THREE.PointLight(0x58a6ff, 2.5, 18);
         pointLight.position.set(0, 4, 0);
         scene.add(pointLight);
 
@@ -149,7 +161,7 @@
         // Dungeon Stein-Boden
         const floorGeo = new THREE.PlaneGeometry(12, 12);
         const floorMat = new THREE.MeshStandardMaterial({ color: 0x0d1117, roughness: 0.9, metalness: 0.1 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
@@ -157,7 +169,7 @@
         gridHelper.position.y = 0.01;
         scene.add(gridHelper);
 
-        // Immersive Dungeon-Wände (Echtes 3D)
+        // Immersive Dungeon-Wände
         const wallMat = new THREE.MeshStandardMaterial({ color: 0x161b22, roughness: 0.8 });
         
         const backWall = new THREE.Mesh(new THREE.BoxGeometry(12, 6, 0.6), wallMat);
@@ -180,12 +192,10 @@
         head.position.y = 1.0;
         playerGroup.add(head);
 
-        // Leuchtendes Visier
         const visor = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.06, 0.4), new THREE.MeshBasicMaterial({ color: 0x58a6ff }));
         visor.position.set(0, 1.02, 0);
         playerGroup.add(visor);
 
-        // Magischer Runen-Aura-Ring am Boden
         const auraRing = new THREE.Mesh(
             new THREE.RingGeometry(0.5, 0.7, 32),
             new THREE.MeshBasicMaterial({ color: 0x3fb950, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })
@@ -252,11 +262,9 @@
                 }
             }
 
-            // Sanfte Animation für Ring & Licht
             auraRing.rotation.z += 0.02;
             fireLight.intensity = 1.8 + Math.sin(Date.now() * 0.005) * 0.4;
 
-            // Schatz-Kollision
             if (playerGroup.position.distanceTo(chest.position) < 0.9) {
                 stats.gold += 50;
                 stats.xp += 100;
