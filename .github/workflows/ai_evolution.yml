@@ -1,0 +1,78 @@
+name: KI-Evolution
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'   # alle 6 Stunden, bei Bedarf anpassen
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ki-evolution
+  cancel-in-progress: false
+
+jobs:
+  evolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Offene Evolutions-PRs zählen
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          n=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("evolution/"))] | length')
+          echo "open=$n" >> "$GITHUB_OUTPUT"
+          echo "Offene Evolutions-PRs: $n"
+
+      - name: Python einrichten
+        if: steps.guard.outputs.open == '0'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Node einrichten
+        if: steps.guard.outputs.open == '0'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Abhängigkeiten und Browser installieren
+        if: steps.guard.outputs.open == '0'
+        run: |
+          pip install openai playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Orchestrator ausführen
+        if: steps.guard.outputs.open == '0'
+        id: evolve
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python orchestrator.py
+
+      - name: Pull Request erstellen
+        if: steps.guard.outputs.open == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ steps.evolve.outputs.title }}
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Keine Änderungen."
+            exit 0
+          fi
+          branch="evolution/${GITHUB_RUN_ID}"
+          git config user.name "AI Evolution Bot"
+          git config user.email "actions@github.com"
+          git checkout -b "$branch"
+          git add -A
+          git commit -m "evolution: ${TITLE:-Update}"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "${TITLE:-KI-Evolution}" \
+            --body "Automatisch erstellt vom KI-Evolutions-Workflow. Tests (Browser + selfTests) waren grün. Zum Übernehmen mergen."
