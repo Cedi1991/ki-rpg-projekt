@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 import time
 import re
@@ -90,6 +91,21 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Detai
             print(f"🌟 Neues World-Class Feature hinzugefügt: {new_task}")
     except Exception as e:
         print(f"⚠️ Konnte kein neues Epic-Task generieren: {e}")
+
+def export_world_state(target_file: str, target_task: str):
+    """Generiert die world_state.json im Root für die Live-Weboberfläche."""
+    try:
+        modules = [f.name for f in WORKSPACE_DIR.glob("*.py")]
+        state = {
+            "latest_module": target_file,
+            "features_count": len(modules),
+            "modules": modules,
+            "status": f"Zuletzt implementiert: {target_task}"
+        }
+        Path("world_state.json").write_text(json.dumps(state, ensure_ascii=False, indent=4), encoding="utf-8")
+        print("🌍 world_state.json erfolgreich für die Weboberfläche aktualisiert!")
+    except Exception as e:
+        print(f"⚠️ Fehler beim Exportieren der world_state.json: {e}")
 
 def main():
     print("==========================================================")
@@ -193,13 +209,14 @@ def main():
                 success = True
 
                 append_creative_next_task(TODO_FILE)
+                export_world_state(target_file, target_task)
 
                 subprocess.run(["git", "config", "--global", "user.name", "AI Evolution Bot"])
                 subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"])
-                subprocess.run(["git", "add", "workspace/"])
-                subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}'"])
-                
-                # NEU: Automatischer Git-Push, damit die Commits und TODO.md-Änderungen im Repo gespeichert bleiben!
+                subprocess.run(["git", "add", "workspace/", "world_state.json"])
+                subprocess.run(["git", "commit", "-m", f"feat: Implementiert '{target_task}' & aktualisiere World-State"])
+
+                # Automatischer Git-Push
                 subprocess.run(["git", "push"], capture_output=True)
                 break
             else:
