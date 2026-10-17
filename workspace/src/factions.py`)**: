@@ -1,0 +1,93 @@
+```python
+"""
+src/factions.py
+
+Procedural faction and guild network.
+
+Provides a lightweight in‑memory model for:
+* creating factions,
+* recording player reputation points,
+* querying alliances,
+* determining territory control.
+
+All data is stored in module‑level dictionaries, making the API
+stateless across imports and suitable for unit‑testing.
+"""
+
+from __future__ import annotations
+
+from collections import defaultdict
+from typing import Dict, List, Set
+
+
+class Faction:
+    """
+    Represents a single faction/guild.
+
+    Attributes
+    ----------
+    name: str
+        Unique identifier of the faction.
+    alliance_threshold: int
+        Minimum total reputation required for the faction to be considered
+        strong enough to form alliances.
+    enemy_threshold: int
+        Minimum total reputation (negative) required for the faction to be
+        considered hostile.  Not used directly in the current logic but kept
+        for extensibility.
+    """
+
+    __slots__ = ("name", "alliance_threshold", "enemy_threshold", "_reputations")
+
+    def __init__(
+        self,
+        name: str,
+        alliance_threshold: int = 100,
+        enemy_threshold: int = -100,
+    ) -> None:
+        self.name = name
+        self.alliance_threshold = alliance_threshold
+        self.enemy_threshold = enemy_threshold
+        # player_id -> reputation points
+        self._reputations: Dict[str, int] = defaultdict(int)
+
+    # ------------------------------------------------------------------ #
+    # Reputation handling
+    # ------------------------------------------------------------------ #
+    def add_reputation(self, player_id: str, points: int) -> None:
+        """Add (or subtract) reputation points for a player."""
+        self._reputations[player_id] += points
+
+    def get_reputation(self, player_id: str) -> int:
+        """Return the current reputation of *player_id* with this faction."""
+        return self._reputations.get(player_id, 0)
+
+    @property
+    def total_reputation(self) -> int:
+        """Sum of all reputation points contributed by every player."""
+        return sum(self._reputations.values())
+
+    # ------------------------------------------------------------------ #
+    # Alliance & territory logic
+    # ------------------------------------------------------------------ #
+    def is_strong(self) -> bool:
+        """True if the faction has reached its alliance threshold."""
+        return self.total_reputation >= self.alliance_threshold
+
+    def controls_territory(self) -> bool:
+        """
+        Determines whether the faction controls a territory.
+
+        The rule is deliberately simple: a faction controls a territory
+        when its total reputation is at least twice its alliance threshold.
+        """
+        return self.total_reputation >= 2 * self.alliance_threshold
+
+    def is_allied_with(self, other: "Faction") -> bool:
+        """
+        Two factions are allied when **both** are strong enough.
+        """
+        return self.is_strong() and other.is_strong()
+
+
+# ---------------------------------------------------------------------- #

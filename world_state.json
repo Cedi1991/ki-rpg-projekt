@@ -1,8 +1,8 @@
 {
-    "latest_module": "src/npc_ai.py`)**:",
+    "latest_module": "src/factions.py`)**:",
     "features_count": 1,
     "modules": [
         "main.py"
     ],
-    "status": "Zuletzt implementiert: **Künstliche Intelligenz für lebendige NPCs mit Gedächtnis (`src/npc_ai.py`)**: Programmiere ein verhaltensbasiertes NPC-System, bei dem Charaktere sich an frühere Interaktionen und Diebstähle des Spielers erinnern und basierend darauf Handelspreise oder Quests anpassen."
+    "status": "Zuletzt implementiert: **Prozedurales Fraktions- und Gilden-Netzwerk (`src/factions.py`)**: Erstelle ein komplexes System rivalisierender Fraktionen, in dem der Spieler durch Quests und Entscheidungen Rufpunkte sammelt, die weltweite Bündnisse und Territoriums-Kontrollen triggern."
 }
