@@ -40,7 +40,7 @@
         }
         #webgl-container {
             width: 100%;
-            height: 260px;
+            height: 280px;
             border-radius: 8px;
             border: 1px solid #30363d;
             margin: 6px 0;
@@ -78,7 +78,7 @@
 
     <div class="container">
         <h1>⚔️ KI-3D-RPG: Autonomes Live-Netzwerk</h1>
-        <div class="ai-status" id="aiStatus">🤖 Lade aktuellen Autopilot-Zustand aus dem Repository...</div>
+        <div class="ai-status" id="aiStatus">🤖 Autonomer Loop aktiv</div>
         
         <!-- 3D Canvas Viewport -->
         <div id="webgl-container"></div>
@@ -90,26 +90,21 @@
         </div>
 
         <div class="console" id="console">
-            [System] Verbinde 3D-Welt mit dem GitHub-Repository...<br>
+            [System] 3D-Dungeon erfolgreich initialisiert.<br>
         </div>
     </div>
 
     <script>
-        // --- LIVE DATEN AUS DEM REPOSITORY LADEN ---
+        // --- LIVE DATEN LADEN ---
         async function loadRepositoryData() {
             try {
-                // Versucht die vom Orchestrator generierte world_state.json zu laden, 
-                // oder greift auf Standardwerte zurück, falls der Autopilot im Hintergrund baut.
                 const response = await fetch('world_state.json');
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('aiStatus').innerText = `🤖 Autopilot-Modul aktiv: ${data.latest_module || 'Quantum Core'}`;
-                    log(`[Sync] Repository-Daten erfolgreich geladen (${data.features_count || 'Multi'} Module aktiv).`);
-                } else {
-                    document.getElementById('aiStatus').innerText = "🤖 Autonomer Loop aktiv (Workspace synchronisiert)";
+                    document.getElementById('aiStatus').innerText = `🤖 Modul aktiv: ${data.latest_module || 'Quantum Core'}`;
                 }
             } catch (e) {
-                document.getElementById('aiStatus').innerText = "🤖 Autonomer Loop aktiv (Standby-Modus)";
+                // Fallback im Standby
             }
         }
         loadRepositoryData();
@@ -146,17 +141,31 @@
 
         // Wände
         const wallMat = new THREE.MeshStandardMaterial({ color: 0x1f242c, roughness: 0.8 });
-        scene.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10, 5, 0.5), wallMat), { position: { x: 0, y: 2.5, z: -5 } }));
-        scene.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.5, 5, 10), wallMat), { position: { x: -5, y: 2.5, z: 0 } }));
+        
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(10, 5, 0.5), wallMat);
+        backWall.position.set(0, 2.5, -5);
+        scene.add(backWall);
+
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5, 10), wallMat);
+        leftWall.position.set(-5, 2.5, 0);
+        scene.add(leftWall);
 
         // Ritter Spielfigur
         const playerGroup = new THREE.Group();
         const bodyMat = new THREE.MeshStandardMaterial({ color: 0x30363d, metalness: 0.8, roughness: 0.2 });
         
-        playerGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.4), bodyMat), { position: { y: 0.6 } }));
-        playerGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), bodyMat), { position: { y: 1.1 } }));
-        playerGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.45), new THREE.MeshBasicMaterial({ color: 0x58a6ff })), { position: { x: 0, y: 1.12, z: 0 } }));
-        
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.4), bodyMat);
+        torso.position.y = 0.6;
+        playerGroup.add(torso);
+
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), bodyMat);
+        head.position.y = 1.1;
+        playerGroup.add(head);
+
+        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.45), new THREE.MeshBasicMaterial({ color: 0x58a6ff }));
+        eye.position.set(0, 1.12, 0);
+        playerGroup.add(eye);
+
         const sword = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.2, 0.05), new THREE.MeshStandardMaterial({ color: 0x8b949e, metalness: 0.9 }));
         sword.position.set(0.4, 0.6, 0.3);
         sword.rotation.z = -0.3;
@@ -233,7 +242,7 @@
             if (playerGroup.position.distanceTo(chest.position) < 1.0) {
                 stats.gold += 50;
                 stats.xp += 100;
-                log("💎 Schatz aus dem Repository-Raum eingesammelt! +50 Gold");
+                log("💎 Schatz eingesammelt! +50 Gold, +100 XP");
                 updateUI();
                 chest.position.set((Math.random() - 0.5) * 6, 0.3, (Math.random() - 0.5) * 6);
                 targetPosition = null;
