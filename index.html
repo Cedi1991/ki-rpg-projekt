@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>KI-3D-RPG | AAA Real-Engine</title>
+    <title>KI-3D-RPG | Isometric Dark Fantasy</title>
     <style>
         body {
-            background-color: #010204;
+            background-color: #020408;
             color: #c9d1d9;
             font-family: 'Courier New', Courier, monospace;
             text-align: center;
@@ -43,14 +43,14 @@
         }
         #webgl-container {
             width: 100%;
-            height: 320px;
+            height: 330px;
             border-radius: 8px;
             border: 1px solid #30363d;
             margin: 4px 0;
-            background: #050810;
+            background: #04060b;
             position: relative;
             cursor: pointer;
-            box-shadow: inset 0 0 25px rgba(0,0,0,0.8);
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
         }
         .stats-box {
             display: flex;
@@ -81,10 +81,10 @@
 <body>
 
     <div class="container">
-        <h1>⚔️ KI-3D-RPG: AAA Real-Engine</h1>
-        <div class="ai-status" id="aiStatus">🤖 Synchronisiere High-End Shader...</div>
+        <h1>⚔️ KI-3D-RPG: Isometric Dark Engine</h1>
+        <div class="ai-status" id="aiStatus">🤖 Lade Backend-Welt-Zustand...</div>
         
-        <!-- Photoreal 3D Viewport -->
+        <!-- Isometrisches WebGL Viewport -->
         <div id="webgl-container"></div>
 
         <div class="stats-box">
@@ -94,14 +94,101 @@
         </div>
 
         <div class="console" id="console">
-            [System] Helligkeit & Beleuchtung optimiert. Tippe ins Bild, um den Helden zu steuern.<br>
+            [System] Isometrische Diablo-Perspektive & Backend-Objekte geladen.<br>
         </div>
     </div>
 
     <script>
-        let pointLight, floor, playerGroup;
+        let scene, camera, renderer, playerGroup;
+        let interactiveObjects = [];
+        let stats = { hp: 100, gold: 0, xp: 0 };
+        let targetPosition = null;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
 
-        // --- 1. LIVE REPOSITORY DATEN LADEN ---
+        // --- 1. SETUP DER ISOMETRISCHEN 3D-WELT ---
+        const container = document.getElementById('webgl-container');
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x04060b);
+        scene.fog = new THREE.FogExp2(0x04060b, 0.04);
+
+        // EXAKTE ISOMETRISCHE KAMERA
+        const aspect = container.clientWidth / container.clientHeight;
+        const d = 7;
+        camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 0.1, 1000);
+        camera.position.set(12, 14, 12);
+        camera.lookAt(0, 0, 0);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.3;
+        container.appendChild(renderer.domElement);
+
+        // Beleuchtung
+        scene.add(new THREE.AmbientLight(0x1e293b, 2.0));
+        
+        const mainLight = new THREE.DirectionalLight(0x58a6ff, 2.5);
+        mainLight.position.set(10, 20, 10);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+
+        // --- 2. DUNGEON BODEN & MAGISCHE RUNEN-GITTER ---
+        const floorGeo = new THREE.PlaneGeometry(12, 12, 16, 16);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8, metalness: 0.2 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const gridHelper = new THREE.GridHelper(12, 12, 0x10b981, 0x065f46);
+        gridHelper.position.y = 0.02;
+        scene.add(gridHelper);
+
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+        
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(12, 5, 0.6), wallMat);
+        backWall.position.set(0, 2.5, -6);
+        scene.add(backWall);
+
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 5, 12), wallMat);
+        leftWall.position.set(-6, 2.5, 0);
+        scene.add(leftWall);
+
+        // --- 3. SPIELFIGUR (Epischer Dark Fantasy Ritter) ---
+        playerGroup = new THREE.Group();
+        const armorMat = new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.95, roughness: 0.2 });
+
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.65, 0.3), armorMat);
+        torso.position.y = 0.5;
+        playerGroup.add(torso);
+
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), armorMat);
+        head.position.y = 0.95;
+        playerGroup.add(head);
+
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.35), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+        visor.position.set(0, 0.98, 0);
+        playerGroup.add(visor);
+
+        const sword = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.3, 0.04), new THREE.MeshBasicMaterial({ color: 0x34d399 }));
+        sword.position.set(0.45, 0.5, 0.25);
+        sword.rotation.z = -0.3;
+        playerGroup.add(sword);
+
+        const auraRing = new THREE.Mesh(
+            new THREE.RingGeometry(0.5, 0.7, 32),
+            new THREE.MeshBasicMaterial({ color: 0x10b981, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+        );
+        auraRing.rotation.x = -Math.PI / 2;
+        auraRing.position.y = 0.03;
+        playerGroup.add(auraRing);
+
+        scene.add(playerGroup);
+
+        // --- 4. BACKEND-DATEN LADEN & OBJEKT-GENERIERUNG ---
         async function fetchAIState() {
             try {
                 const response = await fetch('world_state.json?' + new Date().getTime());
@@ -111,155 +198,56 @@
                     document.getElementById('aiStatus').innerHTML = 
                         `<b>🤖 Autopilot Status:</b> ${data.status.replace(/\*\*/g, '')}<br>` +
                         `<b>📦 Aktive Backend-Module (${data.features_count}):</b> <span style="color: #58a6ff;">${modulesStr}</span>`;
-                
-                    if (data.visual_theme && pointLight && data.visual_theme.light_color) {
-                        pointLight.color.set(data.visual_theme.light_color);
+
+                    if (data.dungeon_objects && interactiveObjects.length === 0) {
+                        data.dungeon_objects.forEach(obj => {
+                            if (obj.type === 'chest') {
+                                const chest = createChest();
+                                chest.position.set(obj.x, 0, obj.z);
+                                scene.add(chest);
+                                interactiveObjects.push({ mesh: chest, type: 'chest', loot: obj.loot });
+                            } else if (obj.type === 'crystal') {
+                                const crystal = createCrystal(obj.color);
+                                crystal.position.set(obj.x, 0.3, obj.z);
+                                scene.add(crystal);
+                            }
+                        });
                     }
                 }
             } catch (e) {}
         }
+
+        function createChest() {
+            const group = new THREE.Group();
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(0.6, 0.4, 0.4), 
+                new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.5 })
+            );
+            body.position.y = 0.2;
+            group.add(body);
+            
+            const lock = new THREE.Mesh(
+                new THREE.BoxGeometry(0.12, 0.12, 0.08), 
+                new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 })
+            );
+            lock.position.set(0, 0.2, 0.21);
+            group.add(lock);
+            return group;
+        }
+
+        function createCrystal(colorType) {
+            const color = colorType === 'blue' ? 0x38bdf8 : 0x34d399;
+            const mesh = new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.25),
+                new THREE.MeshBasicMaterial({ color: color })
+            );
+            return mesh;
+        }
+
         fetchAIState();
         setInterval(fetchAIState, 15000);
 
-        // --- 2. AAA-ENGINE SETUP ---
-        const container = document.getElementById('webgl-container');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x060913);
-        // Deutlich sanfterer Nebel für klare Sicht
-        scene.fog = new THREE.FogExp2(0x060913, 0.035);
-
-        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 8, 7);
-        camera.lookAt(0, 0, 0);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.4; // Höhere Belichtung für knackige Helligkeit
-        container.appendChild(renderer.domElement);
-
-        // Helles, ausgewogenes Umgebungslicht
-        scene.add(new THREE.AmbientLight(0x2a3b5c, 2.2));
-
-        pointLight = new THREE.PointLight(0x58a6ff, 4.0, 25);
-        pointLight.position.set(0, 6, 0);
-        pointLight.castShadow = true;
-        scene.add(pointLight);
-
-        const torchLight = new THREE.PointLight(0xff7b72, 3.5, 16);
-        torchLight.position.set(-4, 3, -4);
-        scene.add(torchLight);
-
-        // --- 3. FOTOREALE DUNGEON-UMGEBUNG ---
-        const dungeonGroup = new THREE.Group();
-
-        const floorGeo = new THREE.PlaneGeometry(16, 16, 32, 32);
-        const floorMat = new THREE.MeshStandardMaterial({ 
-            color: 0x161f30, 
-            roughness: 0.5, 
-            metalness: 0.2 
-        });
-        floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
-        dungeonGroup.add(floor);
-
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, metalness: 0.2 });
-        
-        const backWall = new THREE.Mesh(new THREE.BoxGeometry(16, 8, 0.8), wallMat);
-        backWall.position.set(0, 4, -8);
-        backWall.castShadow = true;
-        backWall.receiveShadow = true;
-        dungeonGroup.add(backWall);
-
-        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.8, 8, 16), wallMat);
-        leftWall.position.set(-8, 4, 0);
-        leftWall.castShadow = true;
-        leftWall.receiveShadow = true;
-        dungeonGroup.add(leftWall);
-
-        scene.add(dungeonGroup);
-
-        // --- 4. MAGISCHE ATMOSPHÄRE & RAUCH ---
-        const particleCount = 80;
-        const particleGeo = new THREE.BufferGeometry();
-        const particlePositions = new Float32Array(particleCount * 3);
-
-        for (let i = 0; i < particleCount * 3; i += 3) {
-            particlePositions[i] = (Math.random() - 0.5) * 12;
-            particlePositions[i + 1] = Math.random() * 6;
-            particlePositions[i + 2] = (Math.random() - 0.5) * 12;
-        }
-        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-        const particleMat = new THREE.PointsMaterial({ color: 0x79c0ff, size: 0.07, transparent: true, opacity: 0.8 });
-        const particles = new THREE.Points(particleGeo, particleMat);
-        scene.add(particles);
-
-        // --- 5. HOCHWERTIGER HELD (Mit eigenem Heldenlicht!) ---
-        playerGroup = new THREE.Group();
-        const armorMat = new THREE.MeshStandardMaterial({ color: 0x2d3748, metalness: 0.9, roughness: 0.2 });
-        const goldTrimMat = new THREE.MeshStandardMaterial({ color: 0xf6e05e, metalness: 0.8, roughness: 0.2 });
-
-        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.65, 0.32), armorMat);
-        torso.position.y = 0.52;
-        torso.castShadow = true;
-        playerGroup.add(torso);
-
-        const chestPlate = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.45, 0.38), goldTrimMat);
-        chestPlate.position.set(0, 0.55, 0);
-        playerGroup.add(chestPlate);
-
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), armorMat);
-        head.position.y = 1.0;
-        head.castShadow = true;
-        playerGroup.add(head);
-
-        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.35), new THREE.MeshBasicMaterial({ color: 0x63b3ed }));
-        visor.position.set(0, 1.02, 0);
-        playerGroup.add(visor);
-
-        const swordBlade = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 0.03), new THREE.MeshBasicMaterial({ color: 0x68d391 }));
-        swordBlade.position.set(0.42, 0.55, 0.3);
-        swordBlade.rotation.z = -0.25;
-        playerGroup.add(swordBlade);
-
-        const auraRing = new THREE.Mesh(
-            new THREE.RingGeometry(0.5, 0.7, 32),
-            new THREE.MeshBasicMaterial({ color: 0x48bb78, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
-        );
-        auraRing.rotation.x = -Math.PI / 2;
-        auraRing.position.y = 0.02;
-        playerGroup.add(auraRing);
-
-        // **NEU: Exklusives Begleitlicht direkt am Helden, damit er immer perfekt beleuchtet ist!**
-        const heroLight = new THREE.PointLight(0xffffff, 2.5, 6);
-        heroLight.position.set(0, 1.5, 0);
-        playerGroup.add(heroLight);
-
-        scene.add(playerGroup);
-
-        // --- 6. MYTHISCHE SCHATZTRUHE ---
-        const chestGroup = new THREE.Group();
-        const chestBody = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.45), new THREE.MeshStandardMaterial({ color: 0x805ad5, roughness: 0.3, metalness: 0.4 }));
-        chestBody.position.y = 0.22;
-        chestBody.castShadow = true;
-        chestGroup.add(chestBody);
-        
-        const floatingGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.15), new THREE.MeshBasicMaterial({ color: 0xed8936 }));
-        floatingGem.position.set(0, 0.55, 0);
-        chestGroup.add(floatingGem);
-        
-        chestGroup.position.set(3.5, 0, -3.5);
-        scene.add(chestGroup);
-
-        // --- 7. FLÜSSIGE TOUCH- & KAMERA-STEUERUNG ---
-        let stats = { hp: 100, gold: 0, xp: 0 };
-        let targetPosition = null;
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
+        // --- 5. TOUCH & KLICK STEUERUNG ---
         renderer.domElement.addEventListener('pointerdown', (e) => {
             const rect = renderer.domElement.getBoundingClientRect();
             mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -269,8 +257,8 @@
             const intersects = raycaster.intersectObject(floor);
             if (intersects.length > 0) {
                 targetPosition = intersects[0].point;
-                targetPosition.x = Math.max(-6, Math.min(6, targetPosition.x));
-                targetPosition.z = Math.max(-6, Math.min(6, targetPosition.z));
+                targetPosition.x = Math.max(-5, Math.min(5, targetPosition.x));
+                targetPosition.z = Math.max(-5, Math.min(5, targetPosition.z));
             }
         });
 
@@ -286,11 +274,11 @@
             document.getElementById('xp').innerText = stats.xp;
         }
 
-        // --- 8. CINEASTISCHE RENDER-SCHLEIFE ---
+        // --- 6. RENDER-SCHLEIFE ---
         function animate() {
             requestAnimationFrame(animate);
 
-            let speed = 0.055;
+            let speed = 0.05;
             if (targetPosition) {
                 const dir = new THREE.Vector3().subVectors(targetPosition, playerGroup.position);
                 if (dir.length() > 0.1) {
@@ -298,34 +286,24 @@
                     dir.normalize();
                     playerGroup.position.addScaledVector(dir, speed);
                     playerGroup.lookAt(targetPosition.x, playerGroup.position.y, targetPosition.z);
-
-                    camera.position.x += (playerGroup.position.x - camera.position.x) * 0.05;
-                    camera.position.z += (playerGroup.position.z + 7 - camera.position.z) * 0.05;
                 } else {
                     targetPosition = null;
                 }
             }
 
-            auraRing.rotation.z += 0.03;
-            floatingGem.rotation.y += 0.04;
-            floatingGem.position.y = 0.55 + Math.sin(Date.now() * 0.005) * 0.08;
-            torchLight.intensity = 3.0 + Math.sin(Date.now() * 0.007) * 0.8;
+            auraRing.rotation.z += 0.025;
 
-            const positions = particles.geometry.attributes.position.array;
-            for (let i = 1; i < positions.length; i += 3) {
-                positions[i] -= 0.003;
-                if (positions[i] < 0) positions[i] = 6;
-            }
-            particles.geometry.attributes.position.needsUpdate = true;
-
-            if (playerGroup.position.distanceTo(chestGroup.position) < 0.9) {
-                stats.gold += 50;
-                stats.xp += 100;
-                log("💎 Mythischen Schatz eingesammelt! +50 Gold");
-                updateUI();
-                chestGroup.position.set((Math.random() - 0.5) * 10, 0, (Math.random() - 0.5) * 10);
-                targetPosition = null;
-            }
+            interactiveObjects.forEach((obj, index) => {
+                if (playerGroup.position.distanceTo(obj.mesh.position) < 0.8) {
+                    stats.gold += 50;
+                    stats.xp += 100;
+                    log(`💎 Truhe geöffnet (${obj.loot})! +50 Gold`);
+                    updateUI();
+                    scene.remove(obj.mesh);
+                    interactiveObjects.splice(index, 1);
+                    targetPosition = null;
+                }
+            });
 
             renderer.render(scene, camera);
         }
