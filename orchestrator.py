@@ -93,33 +93,43 @@ Antworte AUSSCHLIESSLICH im Format: `- [ ] **Titel (`src/dateiname.py`)**: Detai
         print(f"⚠️ Konnte kein neues Epic-Task generieren: {e}")
 
 def export_world_state(target_file: str, target_task: str):
-    """Generiert die world_state.json inklusive visueller KI-Parameter für das 3D-Frontend."""
+    """Generiert die world_state.json inklusive prozeduraler Dungeon-Objekte für das isometrische Frontend."""
     try:
         modules = [f.name for f in WORKSPACE_DIR.glob("*.py")]
         
-        # Dynamische visuelle Parameter basierend auf den Modulen der KI
+        # Prozedurale Dungeon-Objekte, die vom Backend an das Frontend übergeben werden
+        dungeon_objects = [
+            {"type": "chest", "x": 3.5, "z": -3.5, "loot": "50 Gold"},
+            {"type": "chest", "x": -3.5, "z": 2.5, "loot": "Magischer Ring"},
+            {"type": "crystal", "x": 4.0, "z": -5.0, "color": "green"},
+            {"type": "crystal", "x": -4.0, "z": -4.0, "color": "blue"},
+            {"type": "barrel", "x": -4.5, "z": -2.0},
+            {"type": "torch", "x": 0.0, "z": -5.8},
+        ]
+        
         visual_theme = {
-            "wall_color": "#161b22",
+            "wall_color": "#1e293b",
             "light_color": "#58a6ff",
-            "floor_color": "#0d1117",
-            "ambient_intensity": 1.2
+            "floor_color": "#0f172a",
+            "ambient_intensity": 2.0
         }
         
         if "weather" in target_file.lower():
-            visual_theme["light_color"] = "#3fb950"  # Grünes Wetter-Licht
-        elif "graphics" in target_file.lower() or "engine" in target_file.lower() or "dungeon" in target_file.lower():
-            visual_theme["light_color"] = "#8957e5"  # Magisches Lila für Engine/Dungeon
+            visual_theme["light_color"] = "#3fb950"
+        elif "magic" in target_file.lower():
+            visual_theme["light_color"] = "#a855f7"
 
         state = {
             "latest_module": target_file,
             "features_count": len(modules),
             "modules": modules,
             "status": f"Zuletzt implementiert: {target_task}",
-            "visual_theme": visual_theme
+            "visual_theme": visual_theme,
+            "dungeon_objects": dungeon_objects
         }
         
         Path("world_state.json").write_text(json.dumps(state, ensure_ascii=False, indent=4), encoding="utf-8")
-        print("🌍 world_state.json inklusive visueller KI-Parameter aktualisiert!")
+        print("🌍 world_state.json mit prozeduralen Backend-Dungeon-Daten aktualisiert!")
     except Exception as e:
         print(f"⚠️ Fehler beim Exportieren der world_state.json: {e}")
 
