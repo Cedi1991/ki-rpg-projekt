@@ -1,5 +1,5 @@
 {
-  "version": 1792333061,
+  "version": 1792338914,
   "modules": [
     "world",
     "player",
@@ -9,6 +9,7 @@
     "survival",
     "hud",
     "weather",
-    "minimap"
+    "minimap",
+    "savegame"
   ]
 }
