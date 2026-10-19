@@ -13,4 +13,4 @@ Du kannst jederzeit eigene Aufgaben ergänzen oder die Reihenfolge ändern.
 - [!] trap-system | Fallen & Trigger | Fügt im Dungeon zufällig platzierte Fallen hinzu, die bei Betreten Schaden, Betäubung oder Status‑Effekte auslösen und durch kleine Part
 - [ ] suche im Internet nach 3d Modellen für die Figuren um sie richtig darzustellen und zu bewegen
 - [!] ambient-sounds | Ambient Sounds | Spielumgebung erzeugt kontextabhängige Hintergrundgeräusche (Wasserplätschern, Wind, entfernte Monstergeräusche) die je nach Wetter und Gebiet variieren und die Immersion steigern.
-- [ ] status-effects | Status‑Effekte | Fügt temporäre Zustände wie Gift, Betäubung oder Regeneration hinzu, die über Zeit auf Spieler und Gegner wirken und deren Attribute beeinflussen.
+- [!] status-effects | Status‑Effekte | Fügt temporäre Zustände wie Gift, Betäubung oder Regeneration hinzu, die über Zeit auf Spieler und Gegner wirken und deren Attribute beeinflussen.
