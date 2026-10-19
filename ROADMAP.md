@@ -12,5 +12,5 @@ Du kannst jederzeit eigene Aufgaben ergänzen oder die Reihenfolge ändern.
 - [!] torches | Fackeln und Licht | Mehrere flackernde Punktlichter (THREE.PointLight) an den Wänden, die atmosphärisch pulsieren, mit maximal 4 Lichtern wegen Handy-Leistung.
 - [!] trap-system | Fallen & Trigger | Fügt im Dungeon zufällig platzierte Fallen hinzu, die bei Betreten Schaden, Betäubung oder Status‑Effekte auslösen und durch kleine Part
 - [ ] suche im Internet nach 3d Modellen für die Figuren um sie richtig darzustellen und zu bewegen
-- [ ] ambient-sounds | Ambient Sounds | Spielumgebung erzeugt kontextabhängige Hintergrundgeräusche (Wasserplätschern, Wind, entfernte Monstergeräusche) die je nach Wetter und Gebiet variieren und die Immersion steigern.
+- [!] ambient-sounds | Ambient Sounds | Spielumgebung erzeugt kontextabhängige Hintergrundgeräusche (Wasserplätschern, Wind, entfernte Monstergeräusche) die je nach Wetter und Gebiet variieren und die Immersion steigern.
 - [ ] status-effects | Status‑Effekte | Fügt temporäre Zustände wie Gift, Betäubung oder Regeneration hinzu, die über Zeit auf Spieler und Gegner wirken und deren Attribute beeinflussen.
