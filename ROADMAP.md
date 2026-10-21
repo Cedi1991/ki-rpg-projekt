@@ -15,3 +15,4 @@ Du kannst jederzeit eigene Aufgaben ergänzen oder die Reihenfolge ändern.
 - [!] ambient-sounds | Ambient Sounds | Spielumgebung erzeugt kontextabhängige Hintergrundgeräusche (Wasserplätschern, Wind, entfernte Monstergeräusche) die je nach Wetter und Gebiet variieren und die Immersion steigern.
 - [!] status-effects | Status‑Effekte | Fügt temporäre Zustände wie Gift, Betäubung oder Regeneration hinzu, die über Zeit auf Spieler und Gegner wirken und deren Attribute beeinflussen.
 - [!] day-night | Tag/Nacht Zyklus | Fügt einen kontinuierlichen Tag‑ und Nachtwechsel hinzu, der Lichtintensität, Schatten und das Verhalten von Gegnern/Umgebung dynamisch anpasst.
+- [ ] secret-doors | Geheime Türen | Unsichtbare Tür-Trigger, die sich bei Interaktion oder nach dem Lösen eines Rätsels öffnen und verborgene Räume oder Schätze freigeben.
